@@ -1,14 +1,21 @@
 import copy
+import os
+
 import pandas as pd
 import numpy as np
 import random
 from collections import deque
+
+from tqdm import tqdm
 from tensorboardX import SummaryWriter
 from tensorflow.keras.optimizers import Adam, RMSprop
 
 from model import Actor_Model, Critic_Model
 from utils import TradingGraph, Write_to_file
 
+# Exploration settings
+EPSILON_DECAY = 0.975  # 0.99975
+MIN_EPSILON = 0.001
 
 class CustomEnv:
     # A custom Bitcoin trading environment
@@ -45,15 +52,16 @@ class CustomEnv:
                                    optimizer=self.optimizer)
 
     # create tensorboard writer
-    def create_writer(self):
+    def create_writer(self, comment):
         self.replay_count = 0
-        self.writer = SummaryWriter(comment="Crypto_trader")
+        self.writer = SummaryWriter(comment=comment)
 
     # Reset the state of the environment to an initial state
-    def reset(self, env_steps_size=0):
-        self.visualization = TradingGraph(Render_range=self.Render_range)  # init visualization
-        self.trades = deque(maxlen=self.Render_range)  # limited orders memory for visualization
+    def reset(self, visualize=False, env_steps_size=0):
+        if visualize:
+            self.visualization = TradingGraph(Render_range=self.Render_range)  # init visualization
 
+        self.trades = deque(maxlen=self.Render_range)  # limited orders memory for visualization
         self.balance = self.initial_balance
         self.net_worth = self.initial_balance
         self.prev_net_worth = self.initial_balance
@@ -134,7 +142,7 @@ class CustomEnv:
 
         self.orders_history.append(
             [self.balance, self.net_worth, self.crypto_bought, self.crypto_sold, self.crypto_held])
-        Write_to_file(Date, self.orders_history[-1])
+        # Write_to_file(Date, self.orders_history[-1])
 
         # Calculate reward
         reward = self.net_worth - self.prev_net_worth
@@ -150,7 +158,7 @@ class CustomEnv:
 
     # render environment
     def render(self, visualize=False):
-        print(f'Step: {self.current_step}, Net Worth: {self.net_worth}')
+        # print(f'Step: {self.current_step}, Net Worth: {self.net_worth}')
         if visualize:
             Date = self.df.loc[self.current_step, 'Date']
             Open = self.df.loc[self.current_step, 'Open']
@@ -201,28 +209,35 @@ class CustomEnv:
         y_true = np.hstack([advantages, predictions, actions])
 
         # training Actor and Critic networks
-        a_loss = self.Actor.Actor.fit(states, y_true, epochs=self.epochs, verbose=0, shuffle=True)
-        c_loss = self.Critic.Critic.fit(states, target, epochs=self.epochs, verbose=0, shuffle=True)
+        # a_loss = self.Actor.Actor.fit(states, y_true, epochs=self.epochs, verbose=0, shuffle=True)
+        # c_loss = self.Critic.Critic.fit(states, target, epochs=self.epochs, verbose=0, shuffle=True)
+        a_loss = self.Actor.Actor.fit(states, y_true, batch_size=32, epochs=self.epochs, verbose=1)
+        c_loss = self.Critic.Critic.fit(states, target, batch_size=32, epochs=self.epochs, verbose=1)
 
         self.writer.add_scalar('Data/actor_loss_per_replay', np.sum(a_loss.history['loss']), self.replay_count)
         self.writer.add_scalar('Data/critic_loss_per_replay', np.sum(c_loss.history['loss']), self.replay_count)
         self.replay_count += 1
 
-    def act(self, state):
+    def act(self, state, epsilon):
         # Use the network to predict the next action to take, using the model
         prediction = self.Actor.predict(np.expand_dims(state, axis=0))[0]
-        action = np.random.choice(self.action_space, p=prediction)
+        if np.random.random() > epsilon:
+            # Get action from Q table
+            action = np.argmax(prediction)
+        else:
+            # Get random action
+            action = np.random.choice(self.action_space)
         return action, prediction
 
-    def save(self, name="Crypto_trader"):
+    def save(self, name="TradeBot"):
         # save keras model weights
-        self.Actor.Actor.save_weights(f"{name}_Actor.h5")
-        self.Critic.Critic.save_weights(f"{name}_Critic.h5")
+        self.Actor.Actor.save_weights(f"models/{name}_Actor.h5")
+        self.Critic.Critic.save_weights(f"models/{name}_Critic.h5")
 
-    def load(self, name="Crypto_trader"):
+    def load(self, name="TradeBot"):
         # load keras model weights
-        self.Actor.Actor.load_weights(f"{name}_Actor.h5")
-        self.Critic.Critic.load_weights(f"{name}_Critic.h5")
+        self.Actor.Actor.load_weights(f"models/{name}_Actor.h5")
+        self.Critic.Critic.load_weights(f"models/{name}_Critic.h5")
 
 
 def Random_games(env, visualize, train_episodes=50):
@@ -241,17 +256,19 @@ def Random_games(env, visualize, train_episodes=50):
     print("average {} episodes random net_worth: {}".format(train_episodes, average_net_worth / train_episodes))
 
 
-def train_agent(env, visualize=False, train_episodes=50, training_batch_size=500):
-    env.create_writer()  # create TensorBoard writer
+def train_agent(env, visualize=False, train_episodes=50, training_batch_size=500, comment="_train"):
+    env.create_writer(comment)  # create TensorBoard writer
     total_average = deque(maxlen=100)  # save recent 100 episodes net worth
     best_average = 0  # used to track best average net worth
-    for episode in range(train_episodes):
-        state = env.reset(env_steps_size=training_batch_size)
+    epsilon = 1  # not a constant, going to be decayed
+
+    for episode in tqdm(range(1, train_episodes + 1), ascii=True, unit='episodes'):
+        state = env.reset(visualize, env_steps_size=training_batch_size)
 
         states, actions, rewards, predictions, dones, next_states = [], [], [], [], [], []
         for t in range(training_batch_size):
             env.render(visualize)
-            action, prediction = env.act(state)
+            action, prediction = env.act(state, epsilon)
             next_state, reward, done = env.step(action)
             states.append(np.expand_dims(state, axis=0))
             next_states.append(np.expand_dims(next_state, axis=0))
@@ -267,15 +284,21 @@ def train_agent(env, visualize=False, train_episodes=50, training_batch_size=500
         total_average.append(env.net_worth)
         average = np.average(total_average)
 
-        env.writer.add_scalar('Data/average net_worth', average, episode)
+        env.writer.add_scalar('Data/episodes_average_net_worth', average, episode)
         env.writer.add_scalar('Data/episode_orders', env.episode_orders, episode)
+        env.writer.add_scalar('Data/epsilon', epsilon, episode)
 
-        print("net worth {} {:.2f} {:.2f} {}".format(episode, env.net_worth, average, env.episode_orders))
-        if episode > len(total_average):
-            if best_average < average:
-                best_average = average
-                print("Saving model")
-                env.save()
+        print("net worth {} avg {:.2f} ep_ord {:.2f} {}".format(episode, env.net_worth, average, env.episode_orders))
+        # if episode >= len(total_average):
+        if best_average < average:
+            best_average = average
+            print("Saving model")
+            env.save()
+
+        # Decay epsilon
+        if epsilon > MIN_EPSILON:
+            epsilon *= EPSILON_DECAY
+            epsilon = max(MIN_EPSILON, epsilon)
 
 
 def test_agent(env, visualize=True, test_episodes=10):
@@ -295,16 +318,25 @@ def test_agent(env, visualize=True, test_episodes=10):
     print("average {} episodes agent net_worth: {}".format(test_episodes, average_net_worth / test_episodes))
 
 
-df = pd.read_csv('./pricedata.csv')
-df = df.sort_values('Date')
+def main():
+    # Save models weight directory
+    if not os.path.isdir('models'):
+        os.makedirs('models')
 
-lookback_window_size = 50
-train_df = df[:-720 - lookback_window_size]
-test_df = df[-720 - lookback_window_size:]  # 30 days
+    df = pd.read_csv('./BTCUSDT_1h.csv')
+    df = df.sort_values('Date')
 
-train_env = CustomEnv(train_df, lookback_window_size=lookback_window_size)
-test_env = CustomEnv(test_df, lookback_window_size=lookback_window_size)
+    lookback_window_size = 72
+    train_df = df[:-720 - lookback_window_size]
+    test_df = df[-720 - lookback_window_size:]  # 30 days
 
-# train_agent(train_env, visualize=False, train_episodes=20000, training_batch_size=500)
-test_agent(test_env, visualize=True, test_episodes=1000)
-Random_games(test_env, visualize=False, train_episodes=1000)
+    train_env = CustomEnv(train_df, lookback_window_size=lookback_window_size)
+    test_env = CustomEnv(test_df, lookback_window_size=lookback_window_size)
+
+    train_agent(train_env, visualize=False, train_episodes=1000, training_batch_size=8640, comment="_train_5_ep_1000_batch_8640_eps_0.975")
+    # test_agent(test_env, visualize=True, test_episodes=1000)
+    # Random_games(test_env, visualize=False, train_episodes=1000)
+
+
+if __name__ == "__main__":
+    main()

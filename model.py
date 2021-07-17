@@ -28,7 +28,7 @@ class Actor_Model:
         output = Dense(self.action_space, activation="softmax")(X)
 
         self.Actor = Model(inputs=X_input, outputs=output)
-        self.Actor.compile(loss=self.ppo_loss, optimizer=optimizer(lr=lr))
+        self.Actor.compile(loss=self.ppo_loss, optimizer=optimizer(learning_rate=lr))
 
     def ppo_loss(self, y_true, y_pred):
         # Defined in https://arxiv.org/abs/1707.06347
@@ -72,7 +72,7 @@ class Critic_Model:
         value = Dense(1, activation=None)(V)
 
         self.Critic = Model(inputs=X_input, outputs=value)
-        self.Critic.compile(loss=self.critic_PPO2_loss, optimizer=optimizer(lr=lr))
+        self.Critic.compile(loss=self.critic_PPO2_loss, optimizer=optimizer(learning_rate=lr))
 
     def critic_PPO2_loss(self, y_true, y_pred):
         value_loss = K.mean((y_true - y_pred) ** 2)  # standard PPO loss
