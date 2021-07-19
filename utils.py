@@ -273,6 +273,7 @@ def Plot_OHCL(df):
     plt.show()
 
 
+# TODO: better normalzing technique
 def Normalizing(df_original):
     df = df_original.copy()
     column_names = df.columns.tolist()

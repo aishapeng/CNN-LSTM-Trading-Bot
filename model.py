@@ -1,51 +1,23 @@
 import numpy as np
-import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense, Flatten, Conv1D, MaxPooling1D, LSTM
 from tensorflow.keras import backend as K
 
-# tf.config.experimental_run_functions_eagerly(True) # used for debuging and development
-# tf.compat.v1.disable_eager_execution()  # usually using this for fastest performance
-
-# gpus = tf.config.experimental.list_physical_devices('GPU')
-# if len(gpus) > 0:
-#     print(f'GPUs {gpus}')
-#     try:
-#         tf.config.experimental.set_memory_growth(gpus[0], True)
-#     except RuntimeError:
-#         pass
-
-
 class Shared_Model:
     def __init__(self, input_shape, action_space, lr, optimizer, model="Dense"):
         X_input = Input(input_shape)
-        self.action_space = action_space # 100 rows, 15 features
+        self.action_space = action_space # 100 timesteps (batch_size), 15 features (market_history)
 
         # Shared CNN layers:
-        # if model == "CNN":
+        # TODO: seperate see
         X = Conv1D(filters=64, kernel_size=6, padding="same", activation="tanh")(X_input) # 100 rows, 64 features
         X = MaxPooling1D(pool_size=2)(X) # 50 rows, 64 features
         X = Conv1D(filters=32, kernel_size=3, padding="same", activation="tanh")(X)  # 50 rows, 32 features
         X = MaxPooling1D(pool_size=2)(X)  # 25 rows, 32 features
-        # X = Flatten()(X)
-
-        # Shared LSTM layers:
-        # elif model == "LSTM":
         X = LSTM(32, return_sequences=True, input_shape=(X[0], 1))(X)
         X = Flatten()(X)
 
-        #     X = LSTM(256)(X)
-        #
-        # # Shared Dense layers:
-        # else:
-        # X = Flatten()(X_input)
-        # X = Dense(512, activation="relu")(X)
-
-
         # Critic model
-        # V = Dense(512, activation="relu")(X)
-        # V = Dense(256, activation="relu")(V)
-        # V = Dense(64, activation="relu")(V)
         V = Dense(64, activation="relu")(X)
         V = Dense(32, activation="relu")(V)
         value = Dense(1, activation=None)(V)
@@ -54,9 +26,6 @@ class Shared_Model:
         self.Critic.compile(loss=self.critic_PPO2_loss, optimizer=optimizer(lr=lr))
 
         # Actor model
-        # A = Dense(512, activation="relu")(X)
-        # A = Dense(256, activation="relu")(A)
-        # A = Dense(64, activation="relu")(A)
         A = Dense(64, activation="relu")(X)
         A = Dense(32, activation="relu")(A)
         output = Dense(self.action_space, activation="softmax")(A)
@@ -104,21 +73,23 @@ class Shared_Model:
         return self.Critic.predict(state)
 
 
-
 class Actor_Model:
     def __init__(self, input_shape, action_space, lr, optimizer):
         X_input = Input(input_shape)
         self.action_space = action_space
 
-        X = Flatten(input_shape=input_shape)(X_input)
-        X = Dense(512, activation="relu")(X)
-        X = Dense(256, activation="relu")(X)
-        X = Dense(64, activation="relu")(X)
-        output = Dense(self.action_space, activation="softmax")(X)
+        X = Conv1D(filters=64, kernel_size=6, padding="same", activation="tanh")(X_input)  # 100 rows, 64 features
+        X = MaxPooling1D(pool_size=2)(X)  # 50 rows, 64 features
+        X = Conv1D(filters=32, kernel_size=3, padding="same", activation="tanh")(X)  # 50 rows, 32 features
+        X = MaxPooling1D(pool_size=2)(X)  # 25 rows, 32 features
+        X = LSTM(32, return_sequences=True, input_shape=(X[0], 1))(X)
+        X = Flatten()(X)
+        A = Dense(64, activation="relu")(X)
+        A = Dense(32, activation="relu")(A)
+        output = Dense(self.action_space, activation="softmax")(A)
 
         self.Actor = Model(inputs=X_input, outputs=output)
         self.Actor.compile(loss=self.ppo_loss, optimizer=optimizer(lr=lr))
-        # print(self.Actor.summary)
 
     def ppo_loss(self, y_true, y_pred):
         # Defined in https://arxiv.org/abs/1707.06347
@@ -154,13 +125,17 @@ class Actor_Model:
 class Critic_Model:
     def __init__(self, input_shape, action_space, lr, optimizer):
         X_input = Input(input_shape)
+        self.action_space = action_space  # 100 timesteps (batch_size), 15 features (market_history)
 
-        V = Flatten(input_shape=input_shape)(X_input)
-        V = Dense(512, activation="relu")(V)
-        V = Dense(256, activation="relu")(V)
-        V = Dense(64, activation="relu")(V)
+        X = Conv1D(filters=64, kernel_size=6, padding="same", activation="tanh")(X_input)  # 100 rows, 64 features
+        X = MaxPooling1D(pool_size=2)(X)  # 50 rows, 64 features
+        X = Conv1D(filters=32, kernel_size=3, padding="same", activation="tanh")(X)  # 50 rows, 32 features
+        X = MaxPooling1D(pool_size=2)(X)  # 25 rows, 32 features
+        X = LSTM(32, return_sequences=True, input_shape=(X[0], 1))(X)
+        X = Flatten()(X)
+        V = Dense(64, activation="relu")(X)
+        V = Dense(32, activation="relu")(V)
         value = Dense(1, activation=None)(V)
-
         self.Critic = Model(inputs=X_input, outputs=value)
         self.Critic.compile(loss=self.critic_PPO2_loss, optimizer=optimizer(lr=lr))
 
@@ -169,5 +144,4 @@ class Critic_Model:
         return value_loss
 
     def critic_predict(self, state):
-        # return self.Critic.predict([state, np.zeros((state.shape[0], 1))])
         return self.Critic.predict(state)

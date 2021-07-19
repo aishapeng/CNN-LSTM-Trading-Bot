@@ -2,7 +2,7 @@ import os
 import copy
 import json
 import numpy as np
-from model import Shared_Model, Actor_Model, Critic_Model
+from model import Shared_Model
 from tensorflow.keras.optimizers import Adam, RMSprop
 from datetime import datetime
 from tensorboardX import SummaryWriter
@@ -118,18 +118,18 @@ class CustomAgent:
         action = np.random.choice(self.action_space, p=prediction)
         return action, prediction
 
-    def save(self, name="", score="", args=[]):
+    def save(self, score="", args=[]):
         # save keras model weights
-        self.Actor.Actor.save_weights(f"{self.log_name}/{score}_{name}_Actor.h5")
-        self.Critic.Critic.save_weights(f"{self.log_name}/{score}_{name}_Critic.h5")
+        self.Actor.Actor.save_weights(f"{self.log_name}/{score}_Actor.h5")
+        self.Critic.Critic.save_weights(f"{self.log_name}/{score}_Critic.h5")
 
         # update json file settings
         if score != "":
             with open(self.log_name + "/Parameters.json", "r") as json_file:
                 params = json.load(json_file)
             params["saving time"] = datetime.now().strftime('%Y-%m-%d %H:%M')
-            params["Actor name"] = f"{score}_{name}_Actor.h5"
-            params["Critic name"] = f"{score}_{name}_Critic.h5"
+            params["Actor name"] = f"{score}_Actor.h5"
+            params["Critic name"] = f"{score}_Critic.h5"
             with open(self.log_name + "/Parameters.json", "w") as write_file:
                 json.dump(params, write_file, indent=4)
 

@@ -170,7 +170,7 @@ class CustomEnv:
 
 def train_agent(env, agent, visualize=False, train_episodes=50, training_batch_size=500):
     agent.create_writer(env.initial_balance, env.normalize_value, train_episodes)  # create TensorBoard writer
-    total_average = deque(maxlen=100)  # save recent 100 episodes net worth
+    total_average = deque(maxlen=20)  # save recent 20 episodes net worth
     best_average = 0  # used to track best average net worth
     for episode in tqdm(range(1, train_episodes + 1), ascii=True, unit='episodes'):
         state = env.reset(env_steps_size=training_batch_size)
@@ -199,13 +199,19 @@ def train_agent(env, agent, visualize=False, train_episodes=50, training_batch_s
 
         print("episode: {:<5} net worth {:<7.2f} average: {:<7.2f} orders: {}".format(episode, env.net_worth, average,
                                                                                       env.episode_orders))
-        if episode > len(total_average):
+        if not episode % 50:  # save model every 50 episodes
             if best_average < average:
                 best_average = average
                 print("Saving model")
                 agent.save(score="{:.2f}".format(best_average),
                            args=[episode, average, env.episode_orders, a_loss, c_loss])
             agent.save()
+
+    for i in range(env.trades):
+        agent.writer.add_text('Trades/{}'.format(env.trades[i]["Date"],
+                                                 "Type: {}\n Current price: {}\n Bought: {}".format(
+                                                     env.trades[i]["type"], env.trades[i]["current_price"],
+                                                     env.trades[i]["total"])))
 
 
 def test_agent(test_df, test_df_normalized, visualize=True, test_episodes=10, folder="", name="", comment="",
@@ -285,7 +291,7 @@ if __name__ == "__main__":
 
     # single processing training
     agent = CustomAgent(lookback_window_size=lookback_window_size, lr=0.00001, epochs=5, optimizer=Adam, batch_size=32,
-                        depth=depth)
+                        depth=depth, comment="")
     train_env = CustomEnv(df=train_df, df_normalized=train_df_normalized, lookback_window_size=lookback_window_size)
     test_env = CustomEnv(test_df, test_df_normalized, lookback_window_size)
 
