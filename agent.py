@@ -2,7 +2,7 @@ import os
 import copy
 import json
 import numpy as np
-from model import Shared_Model
+from model import Shared_Model, Actor_Model, Critic_Model
 from tensorflow.keras.optimizers import Adam, RMSprop
 from datetime import datetime
 from tensorboardX import SummaryWriter
@@ -10,10 +10,9 @@ from tensorboardX import SummaryWriter
 
 class CustomAgent:
     # A custom Bitcoin trading agent
-    def __init__(self, lookback_window_size=50, lr=0.00005, epochs=1, optimizer=Adam, batch_size=32, model="", depth=0,
+    def __init__(self, lookback_window_size=50, lr=0.00005, epochs=1, optimizer=Adam, batch_size=32, depth=0,
                  comment=""):
         self.lookback_window_size = lookback_window_size
-        self.model = model
         self.comment = comment
         self.depth = depth
 
@@ -34,7 +33,7 @@ class CustomAgent:
 
         # Create shared Actor-Critic network model
         self.Actor = self.Critic = Shared_Model(input_shape=self.state_size, action_space=self.action_space.shape[0],
-                                                lr=self.lr, optimizer=self.optimizer, model=self.model)
+                                                lr=self.lr, optimizer=self.optimizer)
         # Create Actor-Critic network model
         # self.Actor = Actor_Model(input_shape=self.state_size, action_space = self.action_space.shape[0], lr=self.lr, optimizer = self.optimizer)
         # self.Critic = Critic_Model(input_shape=self.state_size, action_space = self.action_space.shape[0], lr=self.lr, optimizer = self.optimizer)
@@ -63,7 +62,6 @@ class CustomAgent:
             "epochs": self.epochs,
             "batch size": self.batch_size,
             "normalize value": normalize_value,
-            "model": self.model,
             "comment": self.comment,
             "saving time": "",
             "Actor name": "",
@@ -102,9 +100,9 @@ class CustomAgent:
         y_true = np.hstack([advantages, predictions, actions])
 
         # training Actor and Critic networks
-        a_loss = self.Actor.Actor.fit(states, y_true, epochs=self.epochs, verbose=0,
+        a_loss = self.Actor.Actor.fit(states, y_true, epochs=self.epochs, verbose=0, shuffle=True,
                                       batch_size=self.batch_size)
-        c_loss = self.Critic.Critic.fit(states, target, epochs=self.epochs, verbose=0,
+        c_loss = self.Critic.Critic.fit(states, target, epochs=self.epochs, verbose=0, shuffle=True,
                                         batch_size=self.batch_size)
 
         self.writer.add_scalar('Data/actor_loss_per_replay', np.sum(a_loss.history['loss']), self.replay_count)

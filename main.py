@@ -1,12 +1,8 @@
-import os
-
-os.environ['CUDA_VISIBLE_DEVICES'] = '0'
-
 import random
 from tqdm import tqdm
 from collections import deque
 from agent import CustomAgent
-from tensorflow.keras.optimizers import Adam, RMSprop
+from tensorflow.keras.optimizers import Adam
 from utils import TradingGraph, Normalizing
 from datetime import datetime
 from indicators import *
@@ -289,11 +285,11 @@ if __name__ == "__main__":
 
     # single processing training
     agent = CustomAgent(lookback_window_size=lookback_window_size, lr=0.00001, epochs=5, optimizer=Adam, batch_size=32,
-                        model="CNN", depth=depth)
+                        depth=depth)
     train_env = CustomEnv(df=train_df, df_normalized=train_df_normalized, lookback_window_size=lookback_window_size)
     test_env = CustomEnv(test_df, test_df_normalized, lookback_window_size)
 
-    train_agent(train_env, agent, visualize=False, train_episodes=1000, training_batch_size=750)
+    train_agent(train_env, agent, visualize=False, train_episodes=1000, training_batch_size=500)
     # test_agent(test_df, test_df_normalized, visualize=False, test_episodes=5, folder="2021_07_18_18_19",
     #            name="1073.96_",
     #            Show_reward=False)
