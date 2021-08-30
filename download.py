@@ -3,7 +3,7 @@ import pandas as pd
 import math
 import os.path
 from datetime import datetime
-
+import random
 from binance.client import Client
 from datetime import timedelta, datetime
 from dateutil import parser
@@ -14,10 +14,10 @@ from dateutil import parser
 binance_api_key = '8TYEY8hkBMeYE53NSLUbaPlud0k4sJdFTfrJ7JUcW0NupkC5VZwrOu2KKXxYbg0N'  # Enter your own API-key here
 binance_api_secret = 'UVZN3VV4IWvi4xjS5s1AHHxXWGrTcUd5oUeNeAx4KPVMzf3GEvElgkpzJm8yeONj'  # Enter your own API-secret here
 
-binsizes = {"1m": 1, "5m": 5, "1h": 60, "1d": 1440}
-batch_size = 750
-# bitmex_client = bitmex(test=False, api_key=bitmex_api_key, api_secret=bitmex_api_secret)
-binance_client = Client(api_key=binance_api_key, api_secret=binance_api_secret)
+# binsizes = {"1m": 1, "5m": 5, "1h": 60, "1d": 1440}
+# batch_size = 750
+# # bitmex_client = bitmex(test=False, api_key=bitmex_api_key, api_secret=bitmex_api_secret)
+# binance_client = Client(api_key=binance_api_key, api_secret=binance_api_secret)
 
 
 ### FUNCTIONS
@@ -51,6 +51,9 @@ def get_all_binance(symbol, kline_size, save = False):
     return data_df
 
 if __name__ == "__main__":
-    binance_symbols = ["BTCUSDT"]
-    for symbol in binance_symbols:
-        get_all_binance(symbol, '1h', save = True)
+    for i in range(1000):
+        start_step = random.randint(72, 11000)
+        print(start_step)
+    # binance_symbols = ["BTCUSDT"]
+    # for symbol in binance_symbols:
+    #     get_all_binance(symbol, '1h', save = True)

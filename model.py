@@ -1,7 +1,10 @@
-import numpy as np
+import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import Input, Dense, Flatten, Conv1D, MaxPooling1D, LSTM
 from tensorflow.keras import backend as K
+
+gpu_devices = tf.config.experimental.list_physical_devices('GPU')
+for device in gpu_devices: tf.config.experimental.set_memory_growth(device, True)
 
 class Shared_Model:
     def __init__(self, input_shape, action_space, lr, optimizer, model="Dense"):
@@ -23,7 +26,7 @@ class Shared_Model:
         value = Dense(1, activation=None)(V)
 
         self.Critic = Model(inputs=X_input, outputs=value)
-        self.Critic.compile(loss=self.critic_PPO2_loss, optimizer=optimizer(lr=lr))
+        self.Critic.compile(loss=self.critic_PPO2_loss, optimizer=optimizer(learning_rate=lr))
 
         # Actor model
         A = Dense(64, activation="relu")(X)
@@ -31,7 +34,7 @@ class Shared_Model:
         output = Dense(self.action_space, activation="softmax")(A)
 
         self.Actor = Model(inputs=X_input, outputs=output)
-        self.Actor.compile(loss=self.ppo_loss, optimizer=optimizer(lr=lr))
+        self.Actor.compile(loss=self.ppo_loss, optimizer=optimizer(learning_rate=lr))
         # print(self.Actor.summary())
 
     def ppo_loss(self, y_true, y_pred):

@@ -1,6 +1,7 @@
 import pandas as pd
 from collections import deque
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
 from mplfinance.original_flavor import candlestick_ohlc
 import matplotlib.dates as mpl_dates
 import cv2
@@ -273,20 +274,9 @@ def Plot_OHCL(df):
     plt.show()
 
 
-# TODO: better normalzing technique
-def Normalizing(df_original):
-    df = df_original.copy()
-    column_names = df.columns.tolist()
-    for column in column_names[1:]:
-        # Logging and Differencing
-        # test = np.log(df[column]) - np.log(df[column].shift(1))
-        # if test[1:].isnull().any():
-        #     df[column] = df[column] - df[column].shift(1)
-        # else:
-        #     df[column] = np.log(df[column]) - np.log(df[column].shift(1))
-        # Min Max Scaler implemented
-        Min = df[column].min()
-        Max = df[column].max()
-        df[column] = (df[column] - Min) / (Max - Min)
+def Normalizing(df):
+    scaler = MinMaxScaler()
+    column_names = df.columns[1:].tolist()
+    df[column_names] = scaler.fit_transform(df[column_names])
 
     return df

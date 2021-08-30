@@ -23,13 +23,17 @@ class CustomAgent:
         self.log_name = datetime.now().strftime("%Y_%m_%d_%H_%M")
 
         # State size contains Market+Orders+Indicators history for the last lookback_window_size steps
-        self.state_size = (lookback_window_size, 5 + depth)  # 5 standard OHCL information + market and indicators
+        self.state_size = (lookback_window_size, depth)  # 5 standard OHCL information + market and indicators
+        # self.state_size = (lookback_window_size, 5 + depth)  # 5 standard OHCL information + market and indicators
 
         # Neural Networks part bellow
         self.lr = lr
         self.epochs = epochs
         self.optimizer = optimizer
         self.batch_size = batch_size
+        self.epsilon = 1
+        self.epsilon_decay = 0.99975
+        self.min_epsilon = 0.001
 
         # Create shared Actor-Critic network model
         self.Actor = self.Critic = Shared_Model(input_shape=self.state_size, action_space=self.action_space.shape[0],
@@ -39,7 +43,7 @@ class CustomAgent:
         # self.Critic = Critic_Model(input_shape=self.state_size, action_space = self.action_space.shape[0], lr=self.lr, optimizer = self.optimizer)
 
     # create tensorboard writer
-    def create_writer(self, initial_balance, normalize_value, train_episodes):
+    def create_writer(self, initial_balance, normalize_value, train_episodes, train_batch_size):
         self.replay_count = 0
         self.writer = SummaryWriter('runs/' + self.log_name)
 
@@ -47,15 +51,16 @@ class CustomAgent:
         if not os.path.exists(self.log_name):
             os.makedirs(self.log_name)
 
-        self.start_training_log(initial_balance, normalize_value, train_episodes)
+        self.start_training_log(initial_balance, normalize_value, train_episodes, train_batch_size)
 
-    def start_training_log(self, initial_balance, normalize_value, train_episodes):
+    def start_training_log(self, initial_balance, normalize_value, train_episodes, train_batch_size):
         # save training parameters to Parameters.json file for future
         current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
         params = {
             "training start": current_date,
             "initial balance": initial_balance,
             "training episodes": train_episodes,
+            "training batch size": train_batch_size,
             "lookback window size": self.lookback_window_size,
             "depth": self.depth,
             "lr": self.lr,
@@ -115,7 +120,16 @@ class CustomAgent:
         # TODO: see the probability
         # Use the network to predict the next action to take, using the model
         prediction = self.Actor.actor_predict(np.expand_dims(state, axis=0))[0]
-        action = np.random.choice(self.action_space, p=prediction)
+        if np.random.random() > self.epsilon:
+            action = np.argmax(prediction)
+        else:
+            # Get random action
+            action = np.random.choice(self.action_space, p=prediction)
+
+        # Decay epsilon
+        if self.epsilon > self.min_epsilon:
+            self.epsilon *= self.epsilon_decay
+        # action = np.random.choice(self.action_space, p=prediction)
         return action, prediction
 
     def save(self, score="", args=[]):
