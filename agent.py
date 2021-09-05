@@ -2,7 +2,7 @@ import os
 import copy
 import json
 import numpy as np
-from model import Shared_Model
+from model import Actor_Model, Critic_Model
 from tensorflow.keras.optimizers import Adam, RMSprop
 from datetime import datetime
 from tensorboardX import SummaryWriter
@@ -10,7 +10,7 @@ from tensorboardX import SummaryWriter
 
 class CustomAgent:
     # A custom Bitcoin trading agent
-    def __init__(self, lookback_window_size=50, lr=0.00005, epochs=1, optimizer=Adam, batch_size=32, depth=0,
+    def __init__(self, lookback_window_size=50, lr=0.00001, epochs=1, optimizer=Adam, batch_size=32, depth=0,
                  comment=""):
         self.lookback_window_size = lookback_window_size
         self.comment = comment
@@ -23,8 +23,7 @@ class CustomAgent:
         self.log_name = datetime.now().strftime("%Y_%m_%d_%H_%M")
 
         # State size contains Market+Orders+Indicators history for the last lookback_window_size steps
-        self.state_size = (lookback_window_size, depth)  # 5 standard OHCL information + market and indicators
-        # self.state_size = (lookback_window_size, 5 + depth)  # 5 standard OHCL information + market and indicators
+        self.state_size = (lookback_window_size, depth)
 
         # Neural Networks part bellow
         self.lr = lr
@@ -36,11 +35,11 @@ class CustomAgent:
         self.min_epsilon = 0.001
 
         # Create shared Actor-Critic network model
-        self.Actor = self.Critic = Shared_Model(input_shape=self.state_size, action_space=self.action_space.shape[0],
-                                                lr=self.lr, optimizer=self.optimizer)
+        # self.Actor = self.Critic = Shared_Model(input_shape=self.state_size, action_space=self.action_space.shape[0],
+        #                                         lr=self.lr, optimizer=self.optimizer)
         # Create Actor-Critic network model
-        # self.Actor = Actor_Model(input_shape=self.state_size, action_space = self.action_space.shape[0], lr=self.lr, optimizer = self.optimizer)
-        # self.Critic = Critic_Model(input_shape=self.state_size, action_space = self.action_space.shape[0], lr=self.lr, optimizer = self.optimizer)
+        self.Actor = Actor_Model(input_shape=self.state_size, action_space = self.action_space.shape[0], lr=self.lr, optimizer = self.optimizer)
+        self.Critic = Critic_Model(input_shape=self.state_size, action_space = self.action_space.shape[0], lr=self.lr, optimizer = self.optimizer)
 
     # create tensorboard writer
     def create_writer(self, initial_balance, normalize_value, train_episodes, train_batch_size):
@@ -95,8 +94,8 @@ class CustomAgent:
         predictions = np.vstack(predictions)
 
         # Get Critic network predictions
-        values = self.Critic.critic_predict(states)
-        next_values = self.Critic.critic_predict(next_states)
+        values = self.Critic.Critic.predict(states)
+        next_values = self.Critic.Critic.predict(next_states)
 
         # Compute advantages
         advantages, target = self.get_gaes(rewards, dones, np.squeeze(values), np.squeeze(next_values))
@@ -119,7 +118,11 @@ class CustomAgent:
     def act(self, state):
         # TODO: see the probability
         # Use the network to predict the next action to take, using the model
-        prediction = self.Actor.actor_predict(np.expand_dims(state, axis=0))[0]
+        # A = np.expand_dims(state, axis=0)
+        # print(A.shape)
+        # prediction = self.Actor.Actor.predict(np.expand_dims(state, axis=0))[0]
+        prediction = self.Actor.Actor.predict(np.expand_dims(state, axis=0))[0]
+
         if np.random.random() > self.epsilon:
             action = np.argmax(prediction)
         else:
@@ -134,8 +137,8 @@ class CustomAgent:
 
     def save(self, score="", args=[]):
         # save keras model weights
-        self.Actor.Actor.save_weights(f"{self.log_name}/{score}_Actor.h5")
-        self.Critic.Critic.save_weights(f"{self.log_name}/{score}_Critic.h5")
+        self.Actor.Actor.save(f"{self.log_name}/{score}_Actor.h5")
+        self.Critic.Critic.save(f"{self.log_name}/{score}_Critic.h5")
 
         # update json file settings
         if score != "":

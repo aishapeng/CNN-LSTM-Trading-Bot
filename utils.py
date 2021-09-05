@@ -5,6 +5,8 @@ from sklearn.preprocessing import MinMaxScaler
 from mplfinance.original_flavor import candlestick_ohlc
 import matplotlib.dates as mpl_dates
 import cv2
+from indicators import *
+
 import numpy as np
 
 
@@ -276,7 +278,44 @@ def Plot_OHCL(df):
 
 def Normalizing(df):
     scaler = MinMaxScaler()
-    column_names = df.columns[1:].tolist()
+    OHLC_columns = ['Open', 'High', 'Low', 'Close', 'Volume']
+    for column in OHLC_columns:
+        # Logging and Differencing
+        df[column] = np.log(df[column]) - np.log(df[column].shift(1))
+    df['atr'] = df['atr'] - df['atr'].shift(1)
+    column_names = ['Open', 'High', 'Low', 'Close', 'Volume', 'rsi', 'atr']
+    # Min Max Scaler implemented
     df[column_names] = scaler.fit_transform(df[column_names])
-
     return df
+
+
+if __name__ == "__main__":
+    # testing normalization technieques
+    df = pd.read_csv('./BTCUSDT_cycle1.csv')
+    # df = df.dropna()
+    # df = df.sort_values('time')
+
+    # df["Close"] = df["Close"] - df["Close"].shift(1)
+    df = df.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
+                            'volume': 'Volume'})
+
+    df = AddIndicators(df)
+    # df["atr"] = np.log(df["atr"]) - np.log(df["atr"].shift(1))
+    df["atr"] = (df["atr"]) - (df["atr"].shift(1))
+    scaler = MinMaxScaler()
+
+    df["cmf"] = scaler.fit_transform(df["cmf"])
+
+
+    # Min = df["Close"].min()
+    # Max = df["Close"].max()
+    # df["Close"] = (df["Close"] - Min) / (Max - Min)
+
+    fig = plt.figure(figsize=(16, 8))
+    plt.plot((df["cmf"]))
+    # plt.plot(np.log(df["Close"]))
+
+    ax = plt.gca()
+    ax.grid(True)
+    fig.tight_layout()
+    plt.show()

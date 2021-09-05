@@ -2,8 +2,8 @@ import pandas as pd
 from ta.trend import SMAIndicator, macd, PSARIndicator
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.momentum import rsi
-from ta.volume import OnBalanceVolumeIndicator
-from utils import Plot_OHCL
+from ta.volume import OnBalanceVolumeIndicator, ChaikinMoneyFlowIndicator
+# from utils import Plot_OHCL
 from ta import add_all_ta_features, add_trend_ta, add_volume_ta, add_volatility_ta, add_momentum_ta, add_others_ta
 import numpy as np
 import seaborn as sns
@@ -23,9 +23,9 @@ def AddIndicators(df):
     # df['bb_bbl'] = indicator_bb.bollinger_lband()
 
     # Add Parabolic Stop and Reverse (Parabolic SAR) indicator (Trend)
-    indicator_psar = PSARIndicator(high=df["High"], low=df["Low"], close=df["Close"], step=0.02, max_step=2,
-                                   fillna=True)
-    df['psar'] = indicator_psar.psar()
+    # indicator_psar = PSARIndicator(high=df["High"], low=df["Low"], close=df["Close"], step=0.02, max_step=2,
+    #                                fillna=True)
+    # df['psar'] = indicator_psar.psar()
 
     # Add Relative Strength Index (RSI) indicator (Momentum)
     df["rsi"] = rsi(close=df["Close"], window=14, fillna=True)
@@ -35,7 +35,10 @@ def AddIndicators(df):
                                  fillna=True).average_true_range()
 
     # Add On-balance Volume indicator (Volume)
-    df["obv"] = OnBalanceVolumeIndicator(close=df["Close"], volume=df["Volume"], fillna=True).on_balance_volume()
+    df["cmf"] = ChaikinMoneyFlowIndicator(high=df["High"], low=df["Low"], close=df["Close"], volume=df["Volume"],  window=20, fillna=True).chaikin_money_flow()
+
+    # # Add On-balance Volume indicator (Volume)
+    # df["obv"] = OnBalanceVolumeIndicator(close=df["Close"], volume=df["Volume"], fillna=True).on_balance_volume()
 
 
     return df
