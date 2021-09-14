@@ -1,5 +1,5 @@
 import pandas as pd
-from ta.trend import SMAIndicator, macd, PSARIndicator
+from ta.trend import SMAIndicator, macd, PSARIndicator, MACD, vortex_indicator_pos, vortex_indicator_neg
 from ta.volatility import BollingerBands, AverageTrueRange
 from ta.momentum import rsi
 from ta.volume import OnBalanceVolumeIndicator, ChaikinMoneyFlowIndicator
@@ -15,7 +15,10 @@ def AddIndicators(df):
     # df["sma7"] = SMAIndicator(close=df["Close"], window=7, fillna=True).sma_indicator()
     # # df["sma25"] = SMAIndicator(close=df["Close"], window=25, fillna=True).sma_indicator()
     # # df["sma99"] = SMAIndicator(close=df["Close"], window=99, fillna=True).sma_indicator()
-    #
+
+    # df['vi_pos'] = vortex_indicator_pos(high=df['High'], low=df['Low'], close=df['Close'], fillna=True)
+    # df['vi_neg'] = vortex_indicator_neg(high=df['High'], low=df['Low'], close=df['Close'], fillna=True)
+
     # # Add Bollinger Bands indicator
     # indicator_bb = BollingerBands(close=df["Close"], window=20, window_dev=2)
     # df['bb_bbm'] = indicator_bb.bollinger_mavg()

@@ -56,9 +56,13 @@ binance_api_secret = 'UVZN3VV4IWvi4xjS5s1AHHxXWGrTcUd5oUeNeAx4KPVMzf3GEvElgkpzJm
 #     if save: data_df.to_csv(filename)
 #     print('All caught up..!')
 #     return data_df
-
+from agent import CustomAgent
+from tensorflow.keras.optimizers import Adam
 if __name__ == "__main__":
     df = pd.read_csv('./BTCUSDT_cycle1.csv')
+    agent = CustomAgent(lookback_window_size=100, lr=0.00001, epochs=5, optimizer=Adam, batch_size=32,
+                        depth=4,
+                        comment="Close(log+shift+minmax)  rsi  cmf  natr, reward = net worth, seperated model")
     # df = df.dropna()
     #
     # df = df.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
@@ -77,13 +81,17 @@ if __name__ == "__main__":
     for i in reversed(range(10)):
         market_history.append([df.loc[i, column] for column in df.columns])
 
-    o = np.expand_dims(market_history, axis=0) #(1, 10, 9) axis = 0 : (10, 1 , 9) axis =1
-    o = np.vstack(market_history) #(10, 9)
-    # o = np.array(market_history)
-    # o = np.expand_dims(o, axis=1)
-    #
-    print(o)
-    print(o.shape)
+    state = np.array(market_history)
+    print(state)
+    print(state.shape)
+
+    # o = np.expand_dims(market_history, axis=0) #(1, 10, 9) axis = 0 : (10, 1 , 9) axis =1
+    # o = np.vstack(market_history) #(10, 9)
+    # # o = np.array(market_history)
+    # # o = np.expand_dims(o, axis=1)
+    # #
+    # print(o)
+    # print(o.shape)
     # c = (o, np.zeros((o.shape[0], 1)))
     # print(c)
     # tf1 = tf.convert_to_tensor(o)
@@ -94,27 +102,3 @@ if __name__ == "__main__":
     # # print(a)
     # # a = np.array(market_history)
     # # a = a[:, np.newaxis]
-    #
-    # market_history.append([df.loc[55, column] for column in df.columns])
-    # X_input = Input((100,8))
-    # X = Conv1D(filters=32, kernel_size=3, padding="same", activation="tanh")(X_input) # 100 rows, 64 features
-    # X = MaxPooling1D(pool_size=2)(X) # 50 rows, 64 features
-    # # X = Conv1D(filters=32, kernel_size=3, padding="same", activation="tanh")(X)  # 50 rows, 32 features
-    # # X = MaxPooling1D(pool_size=2)(X)  # 25 rows, 32 features
-    # # print(X[0])
-    # X = LSTM(32, return_sequences=True, input_shape=(1, X[1], X[2]))(X)
-    # X = Flatten()(X)
-    #
-    #
-    # # V = Dense(64, activation="relu")(X)
-    # # V = Dense(32, activation="relu")(X)
-    # # value = Dense(1, activation=None)(V)
-    #
-    # # Actor model
-    # # A = Dense(64, activation="relu")(X)
-    # A = Dense(32, activation="relu")(X)
-    # output = Dense(3, activation="softmax")(A)
-    #
-    # Actor = Model(inputs=X_input, outputs=output)
-    # # self.Actor.compile(loss=self.ppo_loss, optimizer=optimizer(learning_rate=lr))
-    # print(Actor.summary())

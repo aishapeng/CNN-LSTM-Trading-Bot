@@ -3,6 +3,7 @@ import copy
 import json
 import numpy as np
 from model import Actor_Model, Critic_Model
+from tensorflow import keras
 from tensorflow.keras.optimizers import Adam, RMSprop
 from datetime import datetime
 from tensorboardX import SummaryWriter
@@ -42,7 +43,7 @@ class CustomAgent:
         self.Critic = Critic_Model(input_shape=self.state_size, action_space = self.action_space.shape[0], lr=self.lr, optimizer = self.optimizer)
 
     # create tensorboard writer
-    def create_writer(self, initial_balance, normalize_value, train_episodes, train_batch_size):
+    def create_writer(self, initial_balance, train_episodes=0, train_batch_size=0):
         self.replay_count = 0
         self.writer = SummaryWriter('runs/' + self.log_name)
 
@@ -50,9 +51,9 @@ class CustomAgent:
         if not os.path.exists(self.log_name):
             os.makedirs(self.log_name)
 
-        self.start_training_log(initial_balance, normalize_value, train_episodes, train_batch_size)
+        self.start_training_log(initial_balance, train_episodes, train_batch_size)
 
-    def start_training_log(self, initial_balance, normalize_value, train_episodes, train_batch_size):
+    def start_training_log(self, initial_balance,  train_episodes, train_batch_size):
         # save training parameters to Parameters.json file for future
         current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
         params = {
@@ -65,7 +66,6 @@ class CustomAgent:
             "lr": self.lr,
             "epochs": self.epochs,
             "batch size": self.batch_size,
-            "normalize value": normalize_value,
             "comment": self.comment,
             "saving time": "",
             "Actor name": "",
@@ -104,10 +104,13 @@ class CustomAgent:
         y_true = np.hstack([advantages, predictions, actions])
 
         # training Actor and Critic networks
-        a_loss = self.Actor.Actor.fit(states, y_true, epochs=self.epochs, verbose=0, shuffle=True,
-                                      batch_size=self.batch_size)
-        c_loss = self.Critic.Critic.fit(states, target, epochs=self.epochs, verbose=0, shuffle=True,
-                                        batch_size=self.batch_size)
+        a_loss = self.Actor.Actor.fit(states, y_true, epochs=self.epochs, verbose=0, batch_size=self.batch_size)
+        c_loss = self.Critic.Critic.fit(states, target, epochs=self.epochs, verbose=0, batch_size=self.batch_size)
+
+        # a_loss = self.Actor.Actor.fit(states, y_true, epochs=self.epochs, verbose=0, shuffle=True,
+        #                               batch_size=self.batch_size)
+        # c_loss = self.Critic.Critic.fit(states, target, epochs=self.epochs, verbose=0, shuffle=True,
+        #                                 batch_size=self.batch_size)
 
         self.writer.add_scalar('Data/actor_loss_per_replay', np.sum(a_loss.history['loss']), self.replay_count)
         self.writer.add_scalar('Data/critic_loss_per_replay', np.sum(c_loss.history['loss']), self.replay_count)
@@ -161,5 +164,6 @@ class CustomAgent:
 
     def load(self, folder, name):
         # load keras model weights
+        # self.Actor = keras.models.load_model(os.path.join(folder, f"{name}_Actor.h5"))
         self.Actor.Actor.load_weights(os.path.join(folder, f"{name}_Actor.h5"))
         self.Critic.Critic.load_weights(os.path.join(folder, f"{name}_Critic.h5"))
