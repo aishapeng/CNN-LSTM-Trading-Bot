@@ -7,6 +7,8 @@
 <h3>PPO algorithm</h3>
 <p>The reason PPO is chosen as the RL algorithm comes down to a few factors. Firstly, it must be a model-free algorithm. This is due to the volatility of the crypto market, where the prices are extremely dynamic, and short-term decline can happen unexpectedly. Implementing the model-free approach allows the agent in this research to rapidly adapt when the environment changes its way of reacting to the agent’s actions. </p>
 
+![image](https://user-images.githubusercontent.com/55709960/151690631-ca7a8392-77d4-4cb6-9c5a-58fa639b44f6.png)
+
 <h3>CNN-LSTM architecture</h3>
 <p>As CNNs are not usually adapted to manage complex and long temporal dependencies, the LSTM network is used in this research to cope with temporal correlations. </p>
 
