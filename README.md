@@ -12,3 +12,4 @@
 <h3>CNN-LSTM architecture</h3>
 <p>As CNNs are not usually adapted to manage complex and long temporal dependencies, the LSTM network is used in this research to cope with temporal correlations. </p>
 
+![image](https://user-images.githubusercontent.com/55709960/151690645-fdd88091-beb6-4ee9-ba0d-cd64d49e44b1.png)
