@@ -154,7 +154,6 @@ class Actor_Model:
 class Critic_Model:
     def __init__(self, input_shape, action_space, lr, optimizer):
         X_input = Input(input_shape)
-        self.action_space = action_space  # 100 timesteps (batch_size), 15 features (market_history)
 
         # define CNN model
         # cnn = Sequential()
