@@ -88,7 +88,8 @@ class CustomAgent:
 
     def replay(self, states, actions, rewards, predictions, dones, next_states):
         # reshape memory to appropriate shape for training
-        states = np.vstack(states)
+        # bcz jn we add another dimension to axis0, so our shape is [array([n, n]), array([n, n])] now we stack to array([[n, n], [n,n]])
+        states = np.vstack(states) 
         next_states = np.vstack(next_states)
         actions = np.vstack(actions)
         predictions = np.vstack(predictions)
