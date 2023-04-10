@@ -128,7 +128,7 @@ def train_agent(env, agent, train_episodes=50, training_batch_size=500):
         for t in range(training_batch_size):
             action, prediction = agent.act(state)
             next_state, reward, done = env.step(action)
-            states.append(np.expand_dims(state, axis=0))
+            states.append(np.expand_dims(state, axis=0)) # adding at dimension 0, so my output is (1, 100, feature_cols)
             next_states.append(np.expand_dims(next_state, axis=0))
             action_onehot = np.zeros(3)
             action_onehot[action] = 1
