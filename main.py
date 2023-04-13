@@ -122,7 +122,7 @@ def train_agent(env, agent, train_episodes=50, training_batch_size=500):
     total_average = deque(maxlen=20)  # save recent 20 episodes net worth
     best_average = 0  # used to track best average net worth
     for episode in tqdm(range(1, train_episodes + 1), ascii=True, unit='episodes'):
-        state = env.reset(env_steps_size=training_batch_size)
+        state = env.reset(env_steps_size=training_batch_size) #select a random start point, then return array of lookback window
 
         states, actions, rewards, predictions, dones, next_states = [], [], [], [], [], []
         for t in range(training_batch_size):
