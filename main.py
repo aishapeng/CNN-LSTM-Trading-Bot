@@ -150,18 +150,18 @@ def train_agent(env, agent, train_dataset, train_episodes=50, training_batch_siz
             total_average.append(env.net_worth)
             average = np.average(total_average)
 
-            # Log to TensorBoard
-            agent.writer.add_scalar('Data/episode net_worth', env.net_worth, episode)
-            agent.writer.add_scalar('Data/average net_worth', average, episode)
-            agent.writer.add_scalar('Data/episode_orders', env.episode_orders, episode)
-            
-            print(f"episode: {episode} net worth: {env.net_worth} average: {average} orders: {env.episode_orders}")
-            
-            if episode > len(total_average) and best_average < average:
-                best_average = average
-                agent.save(score="{:.2f}".format(best_average), args=[episode, average, env.episode_orders, a_loss, c_loss])
+        # Log to TensorBoard
+        agent.writer.add_scalar('Data/episode net_worth', env.net_worth, episode)
+        agent.writer.add_scalar('Data/average net_worth', average, episode)
+        agent.writer.add_scalar('Data/episode_orders', env.episode_orders, episode)
+        
+        print(f"episode: {episode} net worth: {env.net_worth} average: {average} orders: {env.episode_orders}")
+        
+        if episode > len(total_average) and best_average < average:
+            best_average = average
+            agent.save(score="{:.2f}".format(best_average), args=[episode, average, env.episode_orders, a_loss, c_loss])
 
-            agent.save(score="latest")
+        agent.save(score="latest")
 
 
 def test_agent(test_df, test_df_original, folder="", name="", comment=""):
