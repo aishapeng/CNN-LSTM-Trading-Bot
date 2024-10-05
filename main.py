@@ -9,7 +9,8 @@ from utils import Normalizing
 from datetime import datetime
 from indicators import *
 
-
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 tf.get_logger().setLevel('ERROR')
 
 class CustomEnv:
