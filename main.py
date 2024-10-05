@@ -10,6 +10,8 @@ from datetime import datetime
 from indicators import *
 
 
+tf.get_logger().setLevel('ERROR')
+
 class CustomEnv:
     # A custom Bitcoin trading environment
     def __init__(self, df, df_original, initial_balance=1000, lookback_window_size=50):  # 40000
@@ -234,40 +236,26 @@ if __name__ == "__main__":
 
     ########## TRAIN ##########
     train_df_1 = pd.read_csv('./btc_1h_data_training.csv')
-    # train_df_2 = pd.read_csv('./BTCUSDT_cycle2.csv')
-    
-    # train_df_original = pd.concat([train_df_1, train_df_2])
     train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
                             'volume': 'Volume'})
     train_df_original = train_df_1.copy()
-    print(train_df_original.head(5))
-    print(train_df_1.head(5))
-    # train_df_2 = train_df_2.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
-    #                         'volume': 'Volume'})
-    
+
     train_df_1 = AddIndicators(train_df_1)  # insert indicators
-    # train_df_2 = AddIndicators(train_df_2)
     
     train_df_1 = train_df_1[100:] # remove first 100 columns for indicators calc
-    # train_df_2 = train_df_2[100:]
-    
-    # train_df_1 = train_df_1[train_df_1[:] != 0]  # remove 0 to prevent math error from logging
-    # train_df_2 = train_df_2[train_df_2[:] != 0]
-    
-    # train_df_original = pd.concat([train_df_1, train_df_2])
-    # train_df_normalized = Normalizing(train_df_original)
-    
+
     train_df_normalized = Normalizing(train_df_1).dropna() # normalize values
-    # train_df_2 = Normalizing(train_df_2).dropna()
-    # train_df_normalized = pd.concat([train_df_1, train_df_2])
-    
+
     train_df_original = train_df_original.sort_values('Timestamp')
     train_df_normalized = train_df_normalized.sort_values('Timestamp')
     train_df_original = train_df_original[1:] # remove nan from normalizing
     train_df_normalized = train_df_normalized[1:]  # remove nan from normalizing
 
-    train_dataset = create_tf_dataset(train_df_normalized)
-    train_dataset = preprocess_dataset(train_dataset, batch_size=64, shuffle_buffer_size=1000)      
+    print(train_df_original.head(5))
+    print(train_df_normalized.head(5))
+
+    # train_dataset = create_tf_dataset(train_df_normalized)
+    # train_dataset = preprocess_dataset(train_dataset, batch_size=64, shuffle_buffer_size=1000)      
     
     depth = len(list(train_df_normalized.columns[1:]))
     lookback_window_size = 100
