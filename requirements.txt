@@ -1,6 +1,6 @@
 python-binance
 pandas
-tensorflow
+tensorflow[and-cuda]
 numpy 
 seaborn
 ta
