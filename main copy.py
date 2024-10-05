@@ -118,50 +118,53 @@ class CustomEnv:
 
         return obs, reward, done
 
-def train_agent(env, agent, train_dataset, train_episodes=50, training_batch_size=64):
+def train_agent(env, agent, train_episodes=50, training_batch_size=500):
     agent.create_writer(env.initial_balance, train_episodes, training_batch_size)  # create TensorBoard writer
     total_average = deque(maxlen=20)  # save recent 20 episodes net worth
     best_average = 0  # used to track best average net worth
-    
-    # Iterate over epochs
     for episode in tqdm(range(1, train_episodes + 1), ascii=True, unit='episodes'):
-        for batch_data in train_dataset:
-            # Get the state from the dataset
-            state = env.reset(env_steps_size=training_batch_size)
-            
-            states, actions, rewards, predictions, dones, next_states = [], [], [], [], [], []
-            
-            for step in batch_data:
-                action, prediction = agent.act(state)
-                next_state, reward, done = env.step(action)
-                
-                states.append(tf.expand_dims(state, axis=0)) 
-                next_states.append(tf.expand_dims(next_state, axis=0))
-                
-                action_onehot = np.zeros(3)
-                action_onehot[action] = 1
-                actions.append(action_onehot)
-                rewards.append(reward)
-                dones.append(done)
-                predictions.append(prediction)
-                state = next_state
+        state = env.reset(env_steps_size=training_batch_size) #select a random start point, then return array of lookback window
 
-            a_loss, c_loss = agent.replay(states, actions, rewards, predictions, dones, next_states)
-            total_average.append(env.net_worth)
-            average = np.average(total_average)
+        states, actions, rewards, predictions, dones, next_states = [], [], [], [], [], []
+        for t in range(training_batch_size):
+            action, prediction = agent.act(state)
+            next_state, reward, done = env.step(action)
+            states.append(np.expand_dims(state, axis=0)) # adding at dimension 0, so my output is (1, 100, feature_cols)
+            next_states.append(np.expand_dims(next_state, axis=0))
+            action_onehot = np.zeros(3)
+            action_onehot[action] = 1
+            actions.append(action_onehot)
+            rewards.append(reward)
+            dones.append(done)
+            predictions.append(prediction)
+            state = next_state
 
-            # Log to TensorBoard
-            agent.writer.add_scalar('Data/episode net_worth', env.net_worth, episode)
-            agent.writer.add_scalar('Data/average net_worth', average, episode)
-            agent.writer.add_scalar('Data/episode_orders', env.episode_orders, episode)
-            
-            print(f"episode: {episode} net worth: {env.net_worth} average: {average} orders: {env.episode_orders}")
-            
-            if episode > len(total_average) and best_average < average:
+        a_loss, c_loss = agent.replay(states, actions, rewards, predictions, dones, next_states)
+        total_average.append(env.net_worth)
+        average = np.average(total_average)
+
+        agent.writer.add_scalar('Data/episode net_worth', env.net_worth, episode)
+        agent.writer.add_scalar('Data/average net_worth', average, episode)
+        agent.writer.add_scalar('Data/episode_orders', env.episode_orders, episode)
+
+        print("episode: {:<5} net worth {:<7.2f} average: {:<7.2f} orders: {}".format(episode, env.net_worth, average,
+                                                                                      env.episode_orders))
+
+        if episode > len(total_average):
+            if best_average < average:
                 best_average = average
-                agent.save(score="{:.2f}".format(best_average), args=[episode, average, env.episode_orders, a_loss, c_loss])
-
+                print("Saving model")
+                agent.save(score="{:.2f}".format(best_average),
+                           args=[episode, average, env.episode_orders, a_loss, c_loss])
             agent.save(score="latest")
+
+            trades_text = ""
+            for i, trades in enumerate(env.trades):
+                trades_text += "Timestamp: {}  \nType: {}  \nCurrent price: {}  \n{action}: {}  \n\n".format(
+                    trades["Timestamp"], trades["Type"], trades["Current price"], trades["Total"],
+                    action="Bought" if trades["Type"] == "Buy" else "Sold")
+            agent.writer.add_text("Trades", trades_text, episode)
+
 
 def test_agent(test_df, test_df_original, folder="", name="", comment=""):
     with open(folder + "/Parameters.json", "r") as json_file:
@@ -231,19 +234,32 @@ if __name__ == "__main__":
 
     ########## TRAIN ##########
     train_df_1 = pd.read_csv('./btc_1h_data_training.csv')
-
+    # train_df_2 = pd.read_csv('./BTCUSDT_cycle2.csv')
+    
+    # train_df_original = pd.concat([train_df_1, train_df_2])
     train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
                             'volume': 'Volume'})
     train_df_original = train_df_1.copy()
     print(train_df_original.head(5))
     print(train_df_1.head(5))
-
+    # train_df_2 = train_df_2.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
+    #                         'volume': 'Volume'})
     
     train_df_1 = AddIndicators(train_df_1)  # insert indicators
+    # train_df_2 = AddIndicators(train_df_2)
     
     train_df_1 = train_df_1[100:] # remove first 100 columns for indicators calc
+    # train_df_2 = train_df_2[100:]
+    
+    # train_df_1 = train_df_1[train_df_1[:] != 0]  # remove 0 to prevent math error from logging
+    # train_df_2 = train_df_2[train_df_2[:] != 0]
+    
+    # train_df_original = pd.concat([train_df_1, train_df_2])
+    # train_df_normalized = Normalizing(train_df_original)
     
     train_df_normalized = Normalizing(train_df_1).dropna() # normalize values
+    # train_df_2 = Normalizing(train_df_2).dropna()
+    # train_df_normalized = pd.concat([train_df_1, train_df_2])
     
     train_df_original = train_df_original.sort_values('Timestamp')
     train_df_normalized = train_df_normalized.sort_values('Timestamp')
