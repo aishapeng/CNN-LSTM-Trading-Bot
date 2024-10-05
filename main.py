@@ -224,6 +224,8 @@ if __name__ == "__main__":
     train_df_original = train_df_1.copy()
     train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
                             'volume': 'Volume'})
+    print(train_df_original.head(5))
+    print(train_df_1.head(5))
     # train_df_2 = train_df_2.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
     #                         'volume': 'Volume'})
     
@@ -239,10 +241,9 @@ if __name__ == "__main__":
     # train_df_original = pd.concat([train_df_1, train_df_2])
     # train_df_normalized = Normalizing(train_df_original)
     
-    train_df_1 = Normalizing(train_df_1).dropna() # normalize values
+    train_df_normalized = Normalizing(train_df_1).dropna() # normalize values
     # train_df_2 = Normalizing(train_df_2).dropna()
     # train_df_normalized = pd.concat([train_df_1, train_df_2])
-    train_df_normalized = train_df_1
     
     train_df_original = train_df_original.sort_values('Timestamp')
     train_df_normalized = train_df_normalized.sort_values('Timestamp')
