@@ -1,2 +1,8 @@
 python-binance
 pandas
+tensorflow
+numpy 
+seaborn
+ta
+tensorboardX
+scikit-learn

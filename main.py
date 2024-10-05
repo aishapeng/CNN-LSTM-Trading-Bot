@@ -4,6 +4,7 @@ from tqdm import tqdm
 from collections import deque
 from agent import CustomAgent
 from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
 from utils import Normalizing
 from datetime import datetime
 from indicators import *
@@ -204,6 +205,14 @@ def test_agent(test_df, test_df_original, folder="", name="", comment=""):
             f', net worth:{env.net_worth}, orders per episode:{env.episode_orders}')
 
 if __name__ == "__main__":
+    # Check if GPU is available
+    gpus = tf.config.experimental.list_physical_devices('GPU')
+    if gpus:
+        print("GPUs are available.")
+        print(f"Number of GPUs available: {len(gpus)}")
+    else:
+        print("No GPU available. Using CPU.")
+        
     pd.set_option('display.max_columns', 100)
     pd.set_option('display.width', 1000)
 
@@ -212,6 +221,7 @@ if __name__ == "__main__":
     # train_df_2 = pd.read_csv('./BTCUSDT_cycle2.csv')
     
     # train_df_original = pd.concat([train_df_1, train_df_2])
+    train_df_original = train_df_1
     train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
                             'volume': 'Volume'})
     # train_df_2 = train_df_2.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
@@ -234,7 +244,7 @@ if __name__ == "__main__":
     # train_df_normalized = pd.concat([train_df_1, train_df_2])
     train_df_normalized = train_df_1
     
-    train_df_original = train_df_1.sort_values('Timestamp')
+    train_df_original = train_df_original.sort_values('Timestamp')
     train_df_normalized = train_df_normalized.sort_values('Timestamp')
     train_df_original = train_df_original[1:] # remove nan from normalizing
     train_df_normalized = train_df_normalized[1:]  # remove nan from normalizing
