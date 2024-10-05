@@ -260,7 +260,7 @@ if __name__ == "__main__":
                         depth=depth, comment="training with last saved and ")
     
     train_env = CustomEnv(df=train_df_normalized, df_original=train_df_original, lookback_window_size=lookback_window_size)
-    train_agent(train_env, agent, train_episodes=4000, training_batch_size=1000)
+    train_agent(env=train_env, agent=agent, train_dataset=train_dataset, train_episodes=4000)
 
     ########## TEST ##########
     # test_df_original = pd.read_csv('./BTCUSDT_cycle3.csv')
