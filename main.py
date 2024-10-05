@@ -125,7 +125,7 @@ def train_agent(env, agent, train_episodes=50, training_batch_size=500):
     agent.create_writer(env.initial_balance, train_episodes, training_batch_size)  # create TensorBoard writer
     total_average = deque(maxlen=20)  # save recent 20 episodes net worth
     best_average = 0  # used to track best average net worth
-    for episode in tqdm(range(1, train_episodes + 1), ascii=True, unit='episodes'):
+    for episode in tqdm(range(1, train_episodes + 1)):
         state = env.reset(env_steps_size=training_batch_size) #select a random start point, then return array of lookback window
 
         states, actions, rewards, predictions, dones, next_states = [], [], [], [], [], []
