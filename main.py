@@ -253,7 +253,7 @@ if __name__ == "__main__":
     depth = len(list(train_df_normalized.columns[1:]))
     lookback_window_size = 100
     
-    agent = CustomAgent(lookback_window_size=lookback_window_size, lr=0.00001, epochs=5, optimizer=Adam, batch_size=32,
+    agent = CustomAgent(lookback_window_size=lookback_window_size, lr=0.00001, epochs=5, optimizer=Adam, batch_size=64,
                         depth=depth, comment="training with last saved and ")
     
     train_env = CustomEnv(df=train_df_normalized, df_original=train_df_original, lookback_window_size=lookback_window_size)

@@ -84,16 +84,41 @@ class Actor_Model:
         X_input = Input(input_shape)
         self.action_space = action_space
 
-        # Optimized CNN + LSTM layers
-        X = Conv1D(filters=64, kernel_size=3, padding="same", activation="relu")(X_input)
-        X = MaxPooling1D(pool_size=2)(X)
-        X = LSTM(64)(X)
-        A = Dense(128, activation="relu")(X)
+        # define CNN model
+        # cnn = Sequential()
+        # cnn.add(Conv1D(filters=32, kernel_size=3, padding="same", activation="relu", input_shape=input_shape)) #timesteps, features
+        # cnn.add(MaxPooling1D(pool_size=2))
+        # cnn.add(Flatten())
+        # # define LSTM model
+        # model = Sequential()
+        # model.add(TimeDistributed(cnn))
+        # model.add(LSTM(32))
+        # model.add(Dense(32, activation="relu"))
+        # model.add(Dense(self.action_space, activation="softmax"))
+        # model.compile(loss=self.ppo_loss, optimizer=optimizer(learning_rate=lr))
+
+        # model = Sequential()
+        # # define CNN model
+        # model.add(TimeDistributed(Conv1D(filters=32, kernel_size=3, padding="same", activation="relu"), input_shape=X_input))
+        # model.add(TimeDistributed(MaxPooling1D(pool_size=2)))
+        # model.add(TimeDistributed(Flatten()))
+        # # define LSTM model
+        # model.add(LSTM(32))
+        # model.add(Dense(32, activation="relu"))
+        # model.add(Dense(self.action_space, activation="softmax"))
+        # model.compile(loss=self.ppo_loss, optimizer=optimizer(learning_rate=lr))
+        # print(model.summary())
+        # self.Actor = model
+        X = Conv1D(filters=32, kernel_size=3, padding="same", activation="tanh")(X_input)
+        X = MaxPooling1D(pool_size=2)(X)  # 50 rows, 64 features
+        X = LSTM(32)(X)
+        X = Flatten()(X)
+        A = Dense(32, activation="relu")(X)
         output = Dense(self.action_space, activation="softmax")(A)
 
         self.Actor = Model(inputs=X_input, outputs=output)
-        self.Actor.compile(loss=self.ppo_loss, optimizer=optimizer(learning_rate=lr))
         print(self.Actor.summary())
+        self.Actor.compile(loss=self.ppo_loss, optimizer=optimizer(learning_rate=lr))
 
     def ppo_loss(self, y_true, y_pred):
         # Defined in https://arxiv.org/abs/1707.06347
