@@ -122,10 +122,10 @@ def train_agent(env, agent, train_dataset, train_episodes=50, training_batch_siz
     agent.create_writer(env.initial_balance, train_episodes, training_batch_size)  # create TensorBoard writer
     total_average = deque(maxlen=20)  # save recent 20 episodes net worth
     best_average = 0  # used to track best average net worth
-    
-    # Iterate over epochs
-    for episode in tqdm(range(1, train_episodes + 1), ascii=True, unit='episodes'):
-        for batch_data in train_dataset:
+
+    # Progress bar for episodes
+    for episode in tqdm(range(1, train_episodes + 1), desc="Training Progress", ascii=True, unit='episodes'):
+        for batch_data in tqdm(train_dataset, desc=f"Episode {episode} Batches", ascii=True, leave=False):
             # Get the state from the dataset
             state = env.reset(env_steps_size=training_batch_size)
             
@@ -162,6 +162,7 @@ def train_agent(env, agent, train_dataset, train_episodes=50, training_batch_siz
                 agent.save(score="{:.2f}".format(best_average), args=[episode, average, env.episode_orders, a_loss, c_loss])
 
             agent.save(score="latest")
+
 
 def test_agent(test_df, test_df_original, folder="", name="", comment=""):
     with open(folder + "/Parameters.json", "r") as json_file:
