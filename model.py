@@ -3,8 +3,11 @@ from tensorflow.keras.models import Model, Sequential
 from tensorflow.keras.layers import Input, Dense, Flatten, Conv1D, MaxPooling1D, LSTM, TimeDistributed
 from tensorflow.keras import backend as K
 
+# Enable XLA optimization
+tf.config.optimizer.set_jit(True)  # Enabling XLA
 gpu_devices = tf.config.experimental.list_physical_devices('GPU')
-for device in gpu_devices: tf.config.experimental.set_memory_growth(device, True)
+for device in gpu_devices: 
+    tf.config.experimental.set_memory_growth(device, True)
 
 class Shared_Model:
     def __init__(self, input_shape, action_space, lr, optimizer, model="Dense"):

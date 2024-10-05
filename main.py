@@ -124,7 +124,7 @@ def train_agent(env, agent, train_dataset, train_episodes=50, training_batch_siz
     best_average = 0  # used to track best average net worth
 
     # Progress bar for episodes
-    for episode in tqdm(range(1, train_episodes + 1), desc="Training Progress", ascii=True, unit='episodes'):
+    for episode in tqdm(range(1, train_episodes + 1), desc="Training Progress", ascii=True, unit='episodes', disable=True):
         for batch_data in tqdm(train_dataset, desc=f"Episode {episode} Batches", ascii=True, leave=False):
             # Get the state from the dataset
             state = env.reset(env_steps_size=training_batch_size)
