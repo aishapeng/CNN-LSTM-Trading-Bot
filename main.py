@@ -208,58 +208,59 @@ if __name__ == "__main__":
     pd.set_option('display.width', 1000)
 
     ########## TRAIN ##########
-    # train_df_1 = pd.read_csv('./BTCUSDT_cycle1.csv')
+    train_df_1 = pd.read_csv('./btc_1h_data_training.csv')
     # train_df_2 = pd.read_csv('./BTCUSDT_cycle2.csv')
-    #
-    # # train_df_original = pd.concat([train_df_1, train_df_2])
-    # train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
-    #                         'volume': 'Volume'})
+    
+    # train_df_original = pd.concat([train_df_1, train_df_2])
+    train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
+                            'volume': 'Volume'})
     # train_df_2 = train_df_2.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
     #                         'volume': 'Volume'})
-    #
-    # train_df_1 = AddIndicators(train_df_1)  # insert indicators
+    
+    train_df_1 = AddIndicators(train_df_1)  # insert indicators
     # train_df_2 = AddIndicators(train_df_2)
-    #
-    # train_df_1 = train_df_1[100:] # remove first 100 columns for indicators calc
+    
+    train_df_1 = train_df_1[100:] # remove first 100 columns for indicators calc
     # train_df_2 = train_df_2[100:]
-    #
-    # # train_df_1 = train_df_1[train_df_1[:] != 0]  # remove 0 to prevent math error from logging
-    # # train_df_2 = train_df_2[train_df_2[:] != 0]
-    #
+    
+    # train_df_1 = train_df_1[train_df_1[:] != 0]  # remove 0 to prevent math error from logging
+    # train_df_2 = train_df_2[train_df_2[:] != 0]
+    
     # train_df_original = pd.concat([train_df_1, train_df_2])
-    # # train_df_normalized = Normalizing(train_df_original)
-    #
-    # train_df_1 = Normalizing(train_df_1).dropna() # normalize values
+    # train_df_normalized = Normalizing(train_df_original)
+    
+    train_df_1 = Normalizing(train_df_1).dropna() # normalize values
     # train_df_2 = Normalizing(train_df_2).dropna()
     # train_df_normalized = pd.concat([train_df_1, train_df_2])
-    #
-    # train_df_original = train_df_original.sort_values('Timestamp')
-    # train_df_normalized = train_df_normalized.sort_values('Timestamp')
-    # train_df_original = train_df_original[1:] # remove nan from normalizing
-    # train_df_normalized = train_df_normalized[1:]  # remove nan from normalizing
-    #
-    # depth = len(list(train_df_normalized.columns[1:]))
-    # lookback_window_size = 100
-    #
-    # agent = CustomAgent(lookback_window_size=lookback_window_size, lr=0.00001, epochs=5, optimizer=Adam, batch_size=32,
-    #                     depth=depth, comment="Close(log+shift+minmax)  rsi  cmf  natr, reward = net worth, seperated model")
-    #
-    # train_env = CustomEnv(df=train_df_normalized, df_original=train_df_original, lookback_window_size=lookback_window_size)
-    # train_agent(train_env, agent, train_episodes=4000, training_batch_size=1000)
+    train_df_normalized = train_df_1
+    
+    train_df_original = train_df_1.sort_values('Timestamp')
+    train_df_normalized = train_df_normalized.sort_values('Timestamp')
+    train_df_original = train_df_original[1:] # remove nan from normalizing
+    train_df_normalized = train_df_normalized[1:]  # remove nan from normalizing
+    
+    depth = len(list(train_df_normalized.columns[1:]))
+    lookback_window_size = 100
+    
+    agent = CustomAgent(lookback_window_size=lookback_window_size, lr=0.00001, epochs=5, optimizer=Adam, batch_size=32,
+                        depth=depth, comment="training with last saved and ")
+    
+    train_env = CustomEnv(df=train_df_normalized, df_original=train_df_original, lookback_window_size=lookback_window_size)
+    train_agent(train_env, agent, train_episodes=4000, training_batch_size=1000)
 
     ########## TEST ##########
-    test_df_original = pd.read_csv('./BTCUSDT_cycle3.csv')
-    test_df_original = test_df_original.rename(
-        columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
-                 'volume': 'Volume'})
+    # test_df_original = pd.read_csv('./BTCUSDT_cycle3.csv')
+    # test_df_original = test_df_original.rename(
+    #     columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
+    #              'volume': 'Volume'})
 
-    test_df = AddIndicators(test_df_original)  # insert indicators
-    test_df = test_df[100:] # remove invalid indicators value
-    test_df_original = test_df_original[100:]
-    test_df_original = test_df_original[test_df_original[:] != 0] # remove 0 to prevent math error from logging
+    # test_df = AddIndicators(test_df_original)  # insert indicators
+    # test_df = test_df[100:] # remove invalid indicators value
+    # test_df_original = test_df_original[100:]
+    # test_df_original = test_df_original[test_df_original[:] != 0] # remove 0 to prevent math error from logging
 
-    test_df = Normalizing(test_df).dropna()
-    test_df_original = test_df_original[1:] # remove nan from normalizing
-    test_df = test_df[1:]
+    # test_df = Normalizing(test_df).dropna()
+    # test_df_original = test_df_original[1:] # remove nan from normalizing
+    # test_df = test_df[1:]
 
-    test_agent(test_df, test_df_original, folder="2021_09_10_16_15", name="latest", comment="2021_09_10_16_15")
+    # test_agent(test_df, test_df_original, folder="2021_09_10_16_15", name="latest", comment="2021_09_10_16_15")
