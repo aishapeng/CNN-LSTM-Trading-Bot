@@ -9,6 +9,8 @@ from utils import Normalizing
 from datetime import datetime
 from indicators import *
 
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 class CustomEnv:
     # A custom Bitcoin trading environment
