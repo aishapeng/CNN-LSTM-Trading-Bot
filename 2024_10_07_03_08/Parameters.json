@@ -1,0 +1,15 @@
+{
+    "training start": "2024-10-07 03:08",
+    "initial balance": 1000,
+    "training episodes": 0,
+    "training batch size": 0,
+    "lookback window size": 100,
+    "depth": 4,
+    "lr": 1e-05,
+    "epochs": 1,
+    "batch size": 32,
+    "comment": "from Oct 7 4am",
+    "saving time": "",
+    "Actor name": "",
+    "Critic name": ""
+}

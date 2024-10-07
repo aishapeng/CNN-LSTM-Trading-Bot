@@ -15,7 +15,7 @@ tf.get_logger().setLevel('ERROR')
 
 class CustomEnv:
     # A custom Bitcoin trading environment
-    def __init__(self, df, df_original, initial_balance=1000, lookback_window_size=50):  # 40000
+    def __init__(self, df, df_original, initial_balance=1000, lookback_window_size=100):  # 40000
         # Define action space and state size and other custom parameters
         self.df = df.reset_index(drop=True)
         self.df_original = df_original.reset_index(drop=True)
@@ -236,7 +236,8 @@ if __name__ == "__main__":
     pd.set_option('display.width', 1000)
 
     ########## TRAIN ##########
-    train_df_1 = pd.read_csv('./btc_1h_data_training.csv')
+    train_df_1 = pd.read_csv('./data/balanced_trend_data.csv')
+    train_df_1 = train_df_1.drop(columns=['MA'])
     train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
                             'volume': 'Volume'})
     train_df_original = train_df_1.copy()
@@ -259,13 +260,13 @@ if __name__ == "__main__":
     # train_dataset = preprocess_dataset(train_dataset, batch_size=64, shuffle_buffer_size=1000)      
     
     depth = len(list(train_df_normalized.columns[1:]))
-    lookback_window_size = 100
+    lookback_window_size = 5
     
     agent = CustomAgent(lookback_window_size=lookback_window_size, lr=0.00001, epochs=5, optimizer=Adam, batch_size=64,
                         depth=depth, comment="training with last saved and ")
     
     train_env = CustomEnv(df=train_df_normalized, df_original=train_df_original, lookback_window_size=lookback_window_size)
-    train_agent(train_env, agent, train_episodes=4000, training_batch_size=1000)
+    train_agent(train_env, agent, train_episodes=400, training_batch_size=100)
 
     ########## TEST ##########
     # test_df_original = pd.read_csv('./BTCUSDT_cycle3.csv')
