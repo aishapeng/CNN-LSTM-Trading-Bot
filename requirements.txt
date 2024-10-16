@@ -1,8 +1,10 @@
 python-binance
 pandas
-tensorflow[and-cuda]
+tensorflow==2.10.0
 numpy 
 seaborn
 ta
 tensorboardX
 scikit-learn
+tqdm
+nautilus_trader

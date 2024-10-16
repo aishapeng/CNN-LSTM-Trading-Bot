@@ -31,14 +31,14 @@ def AddIndicators(df):
     # df['psar'] = indicator_psar.psar()
 
     # Add Relative Strength Index (RSI) indicator (Momentum)
-    df["rsi"] = rsi(close=df["Close"], window=14, fillna=True)
+    df["rsi"] = rsi(close=df["Close"], window=7, fillna=True)
 
     # Add Average True Range indicator (Volatility)
-    df["atr"] = AverageTrueRange(high=df["High"], low=df["Low"], close=df["Close"], window=14,
+    df["atr"] = AverageTrueRange(high=df["High"], low=df["Low"], close=df["Close"], window=7,
                                  fillna=True).average_true_range()
 
     # Add On-balance Volume indicator (Volume)
-    df["cmf"] = ChaikinMoneyFlowIndicator(high=df["High"], low=df["Low"], close=df["Close"], volume=df["Volume"],  window=20, fillna=True).chaikin_money_flow()
+    df["cmf"] = ChaikinMoneyFlowIndicator(high=df["High"], low=df["Low"], close=df["Close"], volume=df["Volume"],  window=14, fillna=True).chaikin_money_flow()
 
     # # Add On-balance Volume indicator (Volume)
     # df["obv"] = OnBalanceVolumeIndicator(close=df["Close"], volume=df["Volume"], fillna=True).on_balance_volume()

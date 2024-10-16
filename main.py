@@ -15,7 +15,7 @@ tf.get_logger().setLevel('ERROR')
 
 class CustomEnv:
     # A custom Bitcoin trading environment
-    def __init__(self, df, df_original, initial_balance=1000, lookback_window_size=100):  # 40000
+    def __init__(self, df, df_original, initial_balance=10000, lookback_window_size=100):  # 40000
         # Define action space and state size and other custom parameters
         self.df = df.reset_index(drop=True)
         self.df_original = df_original.reset_index(drop=True)
@@ -48,12 +48,27 @@ class CustomEnv:
         self.rewards = deque(maxlen=self.lookback_window_size)
         self.env_steps_size = env_steps_size
         # self.punish_value = 0
-        if env_steps_size > 0:  # used for training dataset
-            self.start_step = random.randint(self.lookback_window_size, self.df_total_steps - env_steps_size)
+        # if env_steps_size > 0:  # used for training dataset
+        #     self.start_step = random.randint(self.lookback_window_size, self.df_total_steps - env_steps_size)
+        #     self.end_step = self.start_step + env_steps_size
+        # else:  # used for testing dataset
+        #     self.start_step = self.lookback_window_size
+        #     self.end_step = self.df_total_steps
+
+    #     if env_steps_size > 0:  # used for training dataset
+    # # Calculate the possible starting indices based on increments of 6
+    #         possible_starts = list(range(self.lookback_window_size, self.df_total_steps - env_steps_size + 1, 6))
+    #         if possible_starts:
+    #             self.start_step = random.choice(possible_starts)
+    #             self.end_step = self.start_step + env_steps_size
+    #     else:  # used for testing dataset
+    #         self.start_step = self.lookback_window_size
+    #         self.end_step = self.df_total_stepss
+        
+        possible_starts = list(range(self.lookback_window_size, self.df_total_steps - env_steps_size + 1, 6))
+        if possible_starts:
+            self.start_step = random.choice(possible_starts)
             self.end_step = self.start_step + env_steps_size
-        else:  # used for testing dataset
-            self.start_step = self.lookback_window_size
-            self.end_step = self.df_total_steps
 
         self.current_step = self.start_step
 
@@ -78,39 +93,49 @@ class CustomEnv:
         self.crypto_sold = 0
         self.current_step += 1
 
-        current_price = self.df_original.loc[self.current_step, 'Open']
-        timestamp = self.df_original.loc[self.current_step, 'Timestamp']
-        high = self.df_original.loc[self.current_step, 'High']
-        low = self.df_original.loc[self.current_step, 'Low']
+        current_price = self.df_original.loc[self.current_step, 'Close']
+        last_price = self.df_original.loc[self.current_step-1, 'Close']
+        current_timestamp = self.df_original.loc[self.current_step, 'Timestamp']
+        last_timestamp = self.df_original.loc[self.current_step-1, 'Timestamp']
+        current_high = self.df_original.loc[self.current_step, 'High']
+        last_high = self.df_original.loc[self.current_step-1, 'High']
+        current_low = self.df_original.loc[self.current_step, 'Low']
+        last_low = self.df_original.loc[self.current_step-1, 'Low']
+        reward = 0
+
+        price_diff_perc = (current_price-last_price) / last_price
 
         if action == 0:  # Hold
-            pass
+            if price_diff_perc < 1.015 and price_diff_perc > -1.015:
+                reward = 10
+            else:
+                reward = -10
+             
+        if action == 1 :
+            if price_diff_perc > 1.015:
+                reward = 10
+            else:
+                reward = -10
 
-        elif action == 1 and self.balance > 10: # min 10 USD binance
-            # Buy with 100% of current balance
-            self.crypto_bought = self.balance / current_price
-            self.balance -= self.crypto_bought * current_price
-            self.crypto_bought *= (1 - self.fees)  # substract fees
-            self.crypto_held += self.crypto_bought
-            self.trades.append({'Timestamp': timestamp, 'High': high, 'Low': low, 'Total': self.crypto_bought, 'Type': "Buy",
+            self.trades.append({'Timestamp': last_timestamp, 'High': last_high, 'Low': last_low, 'Total': self.crypto_bought, 'Type': "Buy",
+                                'Current price': last_price})
+            self.trades.append({'Timestamp': current_timestamp, 'High': current_high, 'Low': current_low, 'Total': self.crypto_bought, 'Type': "Sell",
                                 'Current price': current_price})
             self.episode_orders += 1
 
-        elif action == 2 and self.crypto_held * current_price > 10: # min 10 USD binance
-            # Sell 100% of current crypto held
-            self.crypto_sold = self.crypto_held
-            self.crypto_held -= self.crypto_sold
-            self.crypto_sold *= (1 - self.fees)  # substract fees
-            self.balance += self.crypto_sold * current_price
-            self.trades.append({'Timestamp': timestamp, 'High': high, 'Low': low, 'Total': self.crypto_sold, 'Type': "Sell",
+        elif action == 2 : 
+            if price_diff_perc > -1.015:
+                reward = 10
+            else:
+                reward = -10
+            self.trades.append({'Timestamp': last_timestamp, 'High': last_high, 'Low': last_low, 'Total': self.crypto_bought, 'Type': "Sell",
+                                'Current price': last_price})
+            self.trades.append({'Timestamp': current_timestamp, 'High': current_high, 'Low': current_low, 'Total': self.crypto_bought, 'Type': "Buy",
                                 'Current price': current_price})
             self.episode_orders += 1
 
         self.prev_net_worth = self.net_worth
-        self.net_worth = self.balance + self.crypto_held * current_price
-
-        # Calculate reward
-        reward = self.net_worth - self.prev_net_worth
+        self.net_worth += reward
 
         if self.net_worth <= self.initial_balance / 2:
             done = True
@@ -225,6 +250,9 @@ def preprocess_dataset(dataset, batch_size, shuffle_buffer_size):
 
 if __name__ == "__main__":
     # Check if GPU is available
+    from tensorflow.python.client import device_lib
+    print(device_lib.list_local_devices())  
+    
     gpus = tf.config.experimental.list_physical_devices('GPU')
     if gpus:
         print("GPUs are available.")
@@ -236,37 +264,34 @@ if __name__ == "__main__":
     pd.set_option('display.width', 1000)
 
     ########## TRAIN ##########
-    train_df_1 = pd.read_csv('./data/balanced_trend_data.csv')
-    train_df_1 = train_df_1.drop(columns=['MA'])
-    train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
-                            'volume': 'Volume'})
-    train_df_original = train_df_1.copy()
+    train_df_normalized = pd.read_csv('./data/balanced_trend_data_normalised.csv')
+    train_df_normalized = train_df_normalized.drop(columns=['MA'])
+    # train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
+    #                         'volume': 'Volume'})
+    train_df_original = pd.read_csv('./data/balanced_trend_data_normalised_original.csv')
 
-    train_df_1 = AddIndicators(train_df_1)  # insert indicators
+    # train_df_1 = AddIndicators(train_df_1)  # insert indicators
     
-    train_df_1 = train_df_1[100:] # remove first 100 columns for indicators calc
+    # train_df_1 = train_df_1[100:] # remove first 100 columns for indicators calc
 
-    train_df_normalized = Normalizing(train_df_1).dropna() # normalize values
+    # train_df_normalized = Normalizing(train_df_1).dropna() # normalize values
 
-    train_df_original = train_df_original.sort_values('Timestamp')
-    train_df_normalized = train_df_normalized.sort_values('Timestamp')
-    train_df_original = train_df_original[1:] # remove nan from normalizing
-    train_df_normalized = train_df_normalized[1:]  # remove nan from normalizing
+    # train_df_original = train_df_original.sort_values('Timestamp')
+    # train_df_normalized = train_df_normalized.sort_values('Timestamp')
+    # train_df_original = train_df_original[1:] # remove nan from normalizing
+    # train_df_normalized = train_df_normalized[1:]  # remove nan from normalizing
 
     print(train_df_original.head(5))
-    print(train_df_normalized.head(5))
-
-    # train_dataset = create_tf_dataset(train_df_normalized)
-    # train_dataset = preprocess_dataset(train_dataset, batch_size=64, shuffle_buffer_size=1000)      
+    print(train_df_normalized.head(5))  
     
     depth = len(list(train_df_normalized.columns[1:]))
     lookback_window_size = 5
     
     agent = CustomAgent(lookback_window_size=lookback_window_size, lr=0.00001, epochs=5, optimizer=Adam, batch_size=64,
-                        depth=depth, comment="training with last saved and ")
+                        depth=depth, comment="purely on constant rewards")
     
     train_env = CustomEnv(df=train_df_normalized, df_original=train_df_original, lookback_window_size=lookback_window_size)
-    train_agent(train_env, agent, train_episodes=400, training_batch_size=100)
+    train_agent(train_env, agent, train_episodes=4000, training_batch_size=100)
 
     ########## TEST ##########
     # test_df_original = pd.read_csv('./BTCUSDT_cycle3.csv')

@@ -15,7 +15,7 @@ tf.get_logger().setLevel('ERROR')
 
 class CustomEnv:
     # A custom Bitcoin trading environment
-    def __init__(self, df, df_original, initial_balance=1000, lookback_window_size=100):  # 40000
+    def __init__(self, df, df_original, initial_balance=1000, lookback_window_size=5):  # 40000
         # Define action space and state size and other custom parameters
         self.df = df.reset_index(drop=True)
         self.df_original = df_original.reset_index(drop=True)
@@ -182,12 +182,16 @@ def test_agent(test_df, test_df_original, folder="", name="", comment=""):
     agent.create_writer(env.initial_balance)
     agent.load(folder, name)
     state = env.reset()
+    current_date = datetime.now().strftime('%Y-%m-%d_%H:%M')
 
     while True:
         # env.render(visualize)
         action, prediction = agent.act(state)
         state, reward, done = env.step(action)
-        if not env.current_step % 1000:
+        if not env.current_step % 5:
+            with open(f"test_results_{current_date}.txt", "a+") as results:
+                results.write("step: {:<5}, net_worth: {:<7.2f}, orders: {}\n".format(env.current_step, env.net_worth,
+                                                                        env.episode_orders))
             print("step: {:<5}, net_worth: {:<7.2f}, orders: {}".format(env.current_step, env.net_worth,
                                                                         env.episode_orders))
         if env.current_step == env.end_step - 1:
@@ -201,9 +205,10 @@ def test_agent(test_df, test_df_original, folder="", name="", comment=""):
             action="Bought" if trades["Type"] == "Buy" else "Sold")
     agent.writer.add_text("Trades", trades_text, 0)
 
-    with open(f"test_results_{folder}", "a+") as results:
+    with open(f"test_results_{current_date}.txt", "a+") as results:
         current_date = datetime.now().strftime('%Y-%m-%d %H:%M')
-        results.write(f'date: {current_date}')
+        results.write(f'date: {current_date}\n')
+        results.write(f'model folder: {folder}\n')
         results.write(
             f', net worth:{env.net_worth}, orders per episode:{env.episode_orders}')
 
@@ -236,7 +241,7 @@ if __name__ == "__main__":
     pd.set_option('display.width', 1000)
 
     ########## TEST ##########
-    test_df_original = pd.read_csv('./btc_1h_data_testing.csv')
+    test_df_original = pd.read_csv('./data/btc_1h_data_testing.csv')
     test_df_original = test_df_original.rename(
         columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
                  'volume': 'Volume'})
@@ -250,4 +255,6 @@ if __name__ == "__main__":
     test_df_original = test_df_original[1:] # remove nan from normalizing
     test_df = test_df[1:]
 
-    test_agent(test_df, test_df_original, folder="model", name="latest1", comment="from Oct 7 4am")
+    print(test_df.head(5))
+
+    test_agent(test_df, test_df_original, folder="models/2024_10_15_12_22/", name="latest", comment="2024_10_15_12_22")

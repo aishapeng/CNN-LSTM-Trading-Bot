@@ -4,7 +4,7 @@ from tensorflow.keras.layers import Input, Dense, Flatten, Conv1D, MaxPooling1D,
 from tensorflow.keras import backend as K
 
 # Enable XLA optimization
-tf.config.optimizer.set_jit(True)  # Enabling XLA
+# tf.config.optimizer.set_jit(True)  # Enabling XLA
 gpu_devices = tf.config.experimental.list_physical_devices('GPU')
 for device in gpu_devices: 
     tf.config.experimental.set_memory_growth(device, True)
@@ -81,7 +81,6 @@ class Shared_Model:
     #     # return self.Critic.predict([state, np.zeros((state.shape[0], 1))])
     #     return self.Critic.predict(state)
 
-
 class Actor_Model:
     def __init__(self, input_shape, action_space, lr, optimizer):
         X_input = Input(input_shape)
@@ -148,11 +147,11 @@ class Critic_Model:
         # model.compile(loss=self.critic_PPO2_loss, optimizer=optimizer(learning_rate=lr))
         # model.build(X_input)
 
-        X = Conv1D(filters=32, kernel_size=3, padding="same", activation="tanh")(X_input)
+        X = Conv1D(filters=64, kernel_size=3, padding="same", activation="tanh")(X_input)
         X = MaxPooling1D(pool_size=2)(X)  # 50 rows, 64 features
-        X = LSTM(32)(X)
+        X = LSTM(64)(X)
         X = Flatten()(X)
-        V = Dense(32, activation="relu")(X)
+        V = Dense(128, activation="relu")(X)
         value = Dense(1, activation=None)(V)
 
         self.Critic = Model(inputs=X_input, outputs=value)
