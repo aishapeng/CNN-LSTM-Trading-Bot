@@ -5,13 +5,17 @@ import numpy as np
 
 
 def Normalizing(df):
-    scaler = MinMaxScaler()
+    close_scaler = MinMaxScaler()
+    sma_scaler = MinMaxScaler()
     # Logging and Differencing
     df['natr'] = df['atr'] / df['Close']
-    df['rsi'] = df['rsi'] / 100
+    df['rsi_5'] = df['rsi_5'] / 100
+    df['rsi_7'] = df['rsi_7'] / 100
+    df['sma_7'] = np.log(df['sma_7']) - np.log(df['sma_7'].shift(1))
+    df[['sma_7']] = sma_scaler.fit_transform(df[['sma_7']])
     df['Close'] = np.log(df['Close']) - np.log(df['Close'].shift(1))
-    df[['Close']] = scaler.fit_transform(df[['Close']])
-    df = df[['Timestamp', 'Close', 'rsi', 'cmf', 'natr']]
+    df[['Close']] = close_scaler.fit_transform(df[['Close']])
+    df = df[['Timestamp', 'Close', 'rsi_5', 'rsi_7','cmf', 'natr', 'sma_7']]
 
     # column_names = ['Open', 'High', 'Low', 'Close', 'rsi', 'atr']
     return df

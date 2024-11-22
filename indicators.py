@@ -30,8 +30,12 @@ def AddIndicators(df):
     #                                fillna=True)
     # df['psar'] = indicator_psar.psar()
 
+    df["sma_7"] = SMAIndicator(close=df["Close"], window=7, fillna=True).sma_indicator()
+
     # Add Relative Strength Index (RSI) indicator (Momentum)
-    df["rsi"] = rsi(close=df["Close"], window=7, fillna=True)
+    df["rsi_5"] = rsi(close=df["Close"], window=5, fillna=True)
+    df["rsi_7"] = rsi(close=df["Close"], window=7, fillna=True)
+
 
     # Add Average True Range indicator (Volatility)
     df["atr"] = AverageTrueRange(high=df["High"], low=df["Low"], close=df["Close"], window=7,

@@ -1,0 +1,15 @@
+{
+    "training start": "2024-11-05 21:21",
+    "initial balance": 10000,
+    "training episodes": 400,
+    "training batch size": 1000,
+    "lookback window size": 5,
+    "depth": 6,
+    "lr": 1e-05,
+    "epochs": 5,
+    "batch size": 64,
+    "comment": "purely on constant rewards",
+    "saving time": "2024-11-06 10:36",
+    "Actor name": "latest_Actor.keras",
+    "Critic name": "latest_Critic.keras"
+}

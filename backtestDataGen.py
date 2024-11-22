@@ -25,6 +25,9 @@ from nautilus_trader.config import StrategyConfig
 import pandas as pd
 from decimal import Decimal
 
+from indicators import AddIndicators
+from utils import Normalizing
+
 # Initialize the Data Catalog
 catalog = ParquetDataCatalog("./backtest_catalog")
 
@@ -67,6 +70,19 @@ try:
     # Read the CSV file into a pandas DataFrame
     data = pd.read_csv(DATA_FILE_PATH)
     print(data.columns)
+
+    # data = data.rename(
+    #     columns={'timestamp': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
+    #              'volume': 'Volume'})
+
+    # test_df = AddIndicators(data)  # insert indicators
+    # test_df = test_df[100:] # remove invalid indicators value
+    # data = data[100:]
+    # data = data[data[:] != 0] # remove 0 to prevent math error from logging
+
+    # test_df = Normalizing(test_df).dropna()
+    # data = data[1:] # remove nan from normalizing
+    # test_df = test_df[1:]
 
     # # Rename Columns to Match Expected Format
     # data = data.rename(columns={

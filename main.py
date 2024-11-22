@@ -104,16 +104,19 @@ class CustomEnv:
         reward = 0
 
         price_diff_perc = (current_price-last_price) / last_price
+        thresh = 1.03
 
         if action == 0:  # Hold
-            if price_diff_perc < 1.015 and price_diff_perc > -1.015:
+            if price_diff_perc < thresh and price_diff_perc > -thresh:
                 reward = 10
             else:
                 reward = -10
              
         if action == 1 :
-            if price_diff_perc > 1.015:
-                reward = 10
+            if price_diff_perc > thresh:
+                reward = 30
+            elif price_diff_perc > 1:
+                reward = 20
             else:
                 reward = -10
 
@@ -124,8 +127,8 @@ class CustomEnv:
             self.episode_orders += 1
 
         elif action == 2 : 
-            if price_diff_perc > -1.015:
-                reward = 10
+            if price_diff_perc < 1:
+                reward = 20
             else:
                 reward = -10
             self.trades.append({'Timestamp': last_timestamp, 'High': last_high, 'Low': last_low, 'Total': self.crypto_bought, 'Type': "Sell",
@@ -178,13 +181,13 @@ def train_agent(env, agent, train_episodes=50, training_batch_size=500):
         print("episode: {:<5} net worth {:<7.2f} average: {:<7.2f} orders: {}".format(episode, env.net_worth, average,
                                                                                       env.episode_orders))
 
-        if episode > len(total_average):
+        if episode > 100:
             if best_average < average:
                 best_average = average
                 print("Saving model")
                 agent.save(score="{:.2f}".format(best_average),
                            args=[episode, average, env.episode_orders, a_loss, c_loss])
-            agent.save(score="latest")
+            agent.save(score="latest", args=[episode, average, env.episode_orders, a_loss, c_loss])
 
             trades_text = ""
             for i, trades in enumerate(env.trades):
@@ -264,22 +267,9 @@ if __name__ == "__main__":
     pd.set_option('display.width', 1000)
 
     ########## TRAIN ##########
-    train_df_normalized = pd.read_csv('./data/balanced_trend_data_normalised.csv')
+    train_df_normalized = pd.read_csv('./data/balanced_trend_data_normalised_20241029.csv')
     train_df_normalized = train_df_normalized.drop(columns=['MA'])
-    # train_df_1 = train_df_1.rename(columns={'time': 'Timestamp', 'open': 'Open', 'high': 'High', 'low': 'Low', 'close': 'Close',
-    #                         'volume': 'Volume'})
-    train_df_original = pd.read_csv('./data/balanced_trend_data_normalised_original.csv')
-
-    # train_df_1 = AddIndicators(train_df_1)  # insert indicators
-    
-    # train_df_1 = train_df_1[100:] # remove first 100 columns for indicators calc
-
-    # train_df_normalized = Normalizing(train_df_1).dropna() # normalize values
-
-    # train_df_original = train_df_original.sort_values('Timestamp')
-    # train_df_normalized = train_df_normalized.sort_values('Timestamp')
-    # train_df_original = train_df_original[1:] # remove nan from normalizing
-    # train_df_normalized = train_df_normalized[1:]  # remove nan from normalizing
+    train_df_original = pd.read_csv('./data/balanced_trend_data_normalised_original_20241029.csv')
 
     print(train_df_original.head(5))
     print(train_df_normalized.head(5))  
@@ -291,7 +281,7 @@ if __name__ == "__main__":
                         depth=depth, comment="purely on constant rewards")
     
     train_env = CustomEnv(df=train_df_normalized, df_original=train_df_original, lookback_window_size=lookback_window_size)
-    train_agent(train_env, agent, train_episodes=4000, training_batch_size=100)
+    train_agent(train_env, agent, train_episodes=400, training_batch_size=500)
 
     ########## TEST ##########
     # test_df_original = pd.read_csv('./BTCUSDT_cycle3.csv')

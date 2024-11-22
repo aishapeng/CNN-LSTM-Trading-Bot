@@ -142,16 +142,20 @@ class CustomAgent:
 
     def save(self, score="", args=[]):
         # save keras model weights
-        self.Actor.Actor.save(f"{self.log_name}/{score}_Actor.keras")
-        self.Critic.Critic.save(f"{self.log_name}/{score}_Critic.keras")
+        self.Actor.Actor.save(f"{self.log_name}/{score}_eps{args[0]}_Actor.keras")
+        self.Critic.Critic.save(f"{self.log_name}/{score}_eps{args[0]}_Critic.keras")
 
         # update json file settings
         if score != "":
             with open(self.log_name + "/Parameters.json", "r") as json_file:
                 params = json.load(json_file)
             params["saving time"] = datetime.now().strftime('%Y-%m-%d %H:%M')
-            params["Actor name"] = f"{score}_Actor.keras"
-            params["Critic name"] = f"{score}_Critic.keras"
+            if score == "latest":
+                params["Actor name"] = f"latest_Actor.keras"
+                params["Critic name"] = f"latest_Critic.keras"
+            else:
+                params["Actor name"] = f"{score}_Actor.keras"
+                params["Critic name"] = f"{score}_Critic.keras"
             with open(self.log_name + "/Parameters.json", "w") as write_file:
                 json.dump(params, write_file, indent=4)
 
