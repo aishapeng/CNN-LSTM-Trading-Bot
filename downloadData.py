@@ -40,7 +40,7 @@ def get_binance_btc_data(symbol, interval, start_str, end_str=None):
     return df
 
 # Example: Fetch 1-hour interval BTC data starting from January 1, 2023
-symbol = 'BTCUSDT'
+symbol = 'SOLUSDT'
 interval = Client.KLINE_INTERVAL_1HOUR  # '1h' for 1-hour interval
 start_date = '1 Apr, 2024'
 end_date = '4 Oct, 2024'
@@ -48,7 +48,7 @@ end_date = '4 Oct, 2024'
 btc_data = get_binance_btc_data(symbol, interval, start_date, end_date)
 
 # Save the data to a CSV file
-btc_data.to_csv('btc_1h_data_testing.csv', index=False)
+btc_data.to_csv('sol_1h_data_testing.csv', index=False)
 
 # Print the first few rows of the data
 print(btc_data.head())
